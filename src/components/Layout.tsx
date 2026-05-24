@@ -114,9 +114,19 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8">
-          <div className="max-w-7xl mx-auto h-full">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 flex flex-col">
+          <div className="max-w-7xl mx-auto w-full flex-1">
             {children}
+          </div>
+          <div className="mt-8 text-center pb-4">
+             <a 
+                href="https://www.facebook.com/ShahinAlomOfficial28" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-xs font-medium text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+             >
+                Developed by Shahin
+             </a>
           </div>
         </div>
       </main>
