@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Moon, Sun, Plus, Edit2, Trash2, Camera } from 'lucide-react';
+import { Moon, Sun, Plus, Edit2, Trash2, Camera, Mail, Lock } from 'lucide-react';
 import { Category, PaymentMethod } from '../types';
+import { supabase } from '../lib/supabase';
 
-export function SettingsView() {
+export function ProfileView() {
   const { 
     isDark, toggleTheme, user, updateProfile,
     categories, addCategory, updateCategory, deleteCategory,
@@ -18,6 +19,8 @@ export function SettingsView() {
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
+  const [email, setEmail] = useState(user?.email || '');
+  const [password, setPassword] = useState('');
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,6 +36,31 @@ export function SettingsView() {
         setAvatar(reader.result as string);
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEmailUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email) {
+      const { error } = await supabase.auth.updateUser({ email });
+      if (error) {
+        alert('ত্রুটি: ' + error.message);
+      } else {
+        alert('ইমেইল আপডেট করা হয়েছে! দয়া করে নতুন ইমেইল ভেরিফাই করুন।');
+      }
+    }
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password) {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) {
+        alert('ত্রুটি: ' + error.message);
+      } else {
+        alert('পাসওয়ার্ড আপডেট করা হয়েছে!');
+        setPassword('');
+      }
     }
   };
 
@@ -76,7 +104,7 @@ export function SettingsView() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">সেটিংস</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">প্রোফাইল</h2>
 
       <Card>
         <CardHeader>
@@ -86,7 +114,7 @@ export function SettingsView() {
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div className="flex items-center space-x-4">
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center overflow-hidden">
+                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center overflow-hidden flex-shrink-0">
                   {avatar ? (
                     <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
                   ) : (
@@ -109,11 +137,58 @@ export function SettingsView() {
               </div>
             </div>
             <button type="submit" className="w-full py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition">
-              সংরক্ষণ করুন
+              তথ্য সংরক্ষণ করুন
             </button>
           </form>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>অ্যাকাউন্ট সিকিউরিটি</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <form onSubmit={handleEmailUpdate} className="space-y-3">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">ইমেইল পরিবর্তন</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Mail className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                <input 
+                  type="email" 
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="নতুন ইমেইল"
+                  className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                />
+              </div>
+              <button type="submit" className="w-full sm:w-auto py-2.5 sm:py-3 px-6 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-900 dark:hover:bg-slate-600 transition shadow-sm">
+                পরিবর্তন
+              </button>
+            </div>
+          </form>
+
+          <form onSubmit={handlePasswordUpdate} className="space-y-3">
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">পাসওয়ার্ড পরিবর্তন</label>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                <input 
+                  type="password" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="নতুন পাসওয়ার্ড"
+                  className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                />
+              </div>
+              <button type="submit" className="w-full sm:w-auto py-2.5 sm:py-3 px-6 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-900 dark:hover:bg-slate-600 transition shadow-sm">
+                আপডেট
+              </button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white pt-4 pb-2 border-b border-slate-200 dark:border-slate-800">সেটিংস</h2>
 
       <Card>
         <CardContent className="p-4 sm:p-6 flex items-center justify-between">

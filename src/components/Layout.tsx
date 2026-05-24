@@ -33,11 +33,11 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     { id: 'savings', label: 'সঞ্চয়', icon: <PiggyBank size={18} /> },
     { id: 'budget', label: 'বাজেট', icon: <PieChart size={18} /> },
     { id: 'reports', label: 'রিপোর্ট', icon: <PieChart size={18} /> },
-    { id: 'settings', label: 'সেটিংস', icon: <Settings size={18} /> },
+    { id: 'profile', label: 'প্রোফাইল', icon: <UserIcon size={18} /> },
   ];
 
   const bottomNavItems = menuItems.filter(item => 
-    ['dashboard', 'income', 'expense', 'reports', 'settings'].includes(item.id)
+    ['dashboard', 'income', 'expense', 'reports', 'profile'].includes(item.id)
   );
 
   return (
@@ -74,7 +74,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
           </nav>
         </div>
         
-        <div className="mt-auto p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700">
+        <button onClick={() => onViewChange('profile')} className="mt-auto p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-slate-200 dark:hover:bg-slate-700 transition w-full group">
           <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">প্রোফাইল</p>
           <div className="flex items-center gap-3 mb-4">
              <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-blue-200 dark:bg-blue-800 border-2 border-white dark:border-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -85,17 +85,17 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
                )}
              </div>
              <div className="overflow-hidden">
-               <p className="text-sm font-bold truncate text-slate-800 dark:text-slate-200">{user.name}</p>
+               <p className="text-sm font-bold truncate text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user.name}</p>
                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
              </div>
           </div>
-          <button 
-            onClick={logout}
-            className="flex items-center justify-center w-full px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors"
+          <div 
+            onClick={(e) => { e.stopPropagation(); logout(); }}
+            className="flex items-center justify-center w-full px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors border border-transparent hover:border-rose-100 dark:hover:border-rose-900/50"
           >
             <LogOut size={16} className="mr-2" /> লগআউট
-          </button>
-        </div>
+          </div>
+        </button>
       </aside>
 
       {/* Main Content */}
