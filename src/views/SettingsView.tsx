@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Moon, Sun, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Moon, Sun, Plus, Edit2, Trash2, Camera } from 'lucide-react';
 import { Category, PaymentMethod } from '../types';
 
 export function SettingsView() {
   const { 
-    isDark, toggleTheme, 
+    isDark, toggleTheme, user, updateProfile,
     categories, addCategory, updateCategory, deleteCategory,
     paymentMethods, addPaymentMethod, updatePaymentMethod, deletePaymentMethod
   } = useAppStore();
@@ -15,6 +15,26 @@ export function SettingsView() {
   const [newCatType, setNewCatType] = useState<'income' | 'expense'>('expense');
 
   const [newPmName, setNewPmName] = useState('');
+
+  const [editName, setEditName] = useState(user?.name || '');
+  const [avatar, setAvatar] = useState(user?.avatarUrl || '');
+
+  const handleProfileUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateProfile(editName, avatar);
+    alert('প্রোফাইল আপডেট হয়েছে!');
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatar(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,11 +75,48 @@ export function SettingsView() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">সেটিংস</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">সেটিংস</h2>
 
       <Card>
-        <CardContent className="p-6 flex items-center justify-between">
+        <CardHeader>
+          <CardTitle>প্রোফাইল আপডেট</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleProfileUpdate} className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center overflow-hidden">
+                  {avatar ? (
+                    <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl px-4 font-bold text-blue-600 dark:text-blue-400">{editName.charAt(0) || 'U'}</span>
+                  )}
+                </div>
+                <label className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-1.5 cursor-pointer hover:bg-blue-700 transition">
+                  <Camera className="w-3 h-3 text-white" />
+                  <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                </label>
+              </div>
+              <div className="flex-1">
+                <input 
+                  type="text" 
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="আপনার নাম"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                />
+              </div>
+            </div>
+            <button type="submit" className="w-full py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition">
+              সংরক্ষণ করুন
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-4 sm:p-6 flex items-center justify-between">
           <div>
             <h3 className="font-bold text-slate-900 dark:text-white">ডার্ক মোড</h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">অ্যাপের থিম পরিবর্তন করুন</p>
@@ -78,11 +135,11 @@ export function SettingsView() {
           <CardTitle>ক্যাটাগরি ম্যানেজমেন্ট</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddCategory} className="flex gap-4 mb-6">
+          <form onSubmit={handleAddCategory} className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
             <select 
               value={newCatType}
               onChange={(e) => setNewCatType(e.target.value as any)}
-              className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none appearance-none shadow-sm"
+              className="w-full sm:w-auto bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none appearance-none shadow-sm"
             >
               <option value="expense">ব্যয়</option>
               <option value="income">আয়</option>
@@ -92,10 +149,12 @@ export function SettingsView() {
               value={newCatName}
               onChange={(e) => setNewCatName(e.target.value)}
               placeholder="নতুন ক্যাটাগরি"
-              className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+              className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
             />
-            <button type="submit" className="px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:bg-blue-700 font-bold transition flex items-center">
-              <Plus className="w-5 h-5" />
+            <button type="submit" className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-200 dark:shadow-blue-900/20 hover:bg-blue-700 font-bold transition flex justify-center items-center">
+              <Plus className="w-5 h-5 mr-2 sm:mr-0 inline sm:hidden" />
+              <span className="sm:hidden font-medium ml-1">যুক্ত করুন</span>
+              <Plus className="w-5 h-5 hidden sm:inline" />
             </button>
           </form>
 
@@ -135,16 +194,18 @@ export function SettingsView() {
           <CardTitle>পেমেন্ট মেথড</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAddPaymentMethod} className="flex gap-4 mb-6">
+          <form onSubmit={handleAddPaymentMethod} className="flex flex-col sm:flex-row gap-3 sm:gap-4 mb-6">
             <input 
               type="text"
               value={newPmName}
               onChange={(e) => setNewPmName(e.target.value)}
               placeholder="নতুন মেথড (উদাঃ কার্ড)"
-              className="flex-1 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+              className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
             />
-            <button type="submit" className="px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-md shadow-blue-500/20 hover:bg-blue-700 font-bold transition flex items-center">
-              <Plus className="w-5 h-5" />
+            <button type="submit" className="w-full sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl shadow-md shadow-blue-500/20 hover:bg-blue-700 font-bold transition flex justify-center items-center">
+              <Plus className="w-5 h-5 mr-2 sm:mr-0 inline sm:hidden" />
+              <span className="sm:hidden font-medium ml-1">যুক্ত করুন</span>
+              <Plus className="w-5 h-5 hidden sm:inline" />
             </button>
           </form>
 

@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { Category, PaymentMethod, Transaction, Budget, Loan, SavingsGoal, User } from './types';
 import { supabase } from './lib/supabase';
 
-interface State {
+export interface State {
   user: User | null;
   categories: Category[];
   paymentMethods: PaymentMethod[];
@@ -48,6 +48,7 @@ const initialState: State = {
 interface AppContextType extends State {
   login: (name: string, email: string) => void;
   logout: () => void;
+  updateProfile: (name: string, avatarUrl: string) => Promise<void>;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
   addCategory: (c: Omit<Category, 'id'>) => void;
@@ -85,7 +86,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Initial Auth Load
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '' } }));
+        setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '', avatarUrl: session.user.user_metadata?.avatarUrl || '' } }));
         loadFromSupabase(session.user.id);
       }
     });
@@ -93,7 +94,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Listen to Auth Changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
-        setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '' } }));
+        setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '', avatarUrl: session.user.user_metadata?.avatarUrl || '' } }));
         loadFromSupabase(session.user.id);
       } else {
         setState(s => ({ ...initialState, isDark: s.isDark }));
@@ -105,8 +106,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loadFromSupabase = async (userId: string) => {
     const { data, error } = await supabase.from('app_sync_state').select('state').eq('user_id', userId).single();
+    const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', userId).single();
+
     if (data && data.state) {
-      setState(s => ({ ...s, ...data.state, user: s.user }));
+      setState(s => ({ 
+          ...s, 
+          ...data.state, 
+          user: s.user ? { 
+              ...s.user, 
+              name: profile?.name || s.user.name, 
+              avatarUrl: profile?.avatar_url || s.user.avatarUrl 
+          } : s.user 
+      }));
+    } else if (profile) {
+      setState(s => s.user ? { ...s, user: { ...s.user, name: profile.name, avatarUrl: profile.avatar_url } } : s);
     }
   };
 
@@ -151,6 +164,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     await supabase.auth.signOut();
+  };
+
+  const updateProfile = async (name: string, avatarUrl: string) => {
+    if (state.user) {
+        await supabase.from('profiles').upsert({
+            id: state.user.id,
+            name: name,
+            avatar_url: avatarUrl,
+            updated_at: new Date().toISOString()
+        });
+        setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl } } : s);
+    }
   };
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
@@ -268,6 +293,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         ...state,
         login,
         logout,
+        updateProfile,
         addTransaction,
         deleteTransaction,
         addCategory,

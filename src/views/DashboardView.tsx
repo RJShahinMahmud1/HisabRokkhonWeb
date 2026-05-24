@@ -23,10 +23,10 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
     .slice(0, 5);
 
   return (
-    <div className="space-y-6">
-      <header className="flex justify-between items-center mb-8">
+    <div className="space-y-4 sm:space-y-6">
+      <header className="flex justify-between items-center mb-6 sm:mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white">সুস্বাগতম, {user?.name.split(' ')[0]}! 👋</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">সুস্বাগতম, {user?.name.split(' ')[0]}! 👋</h2>
           <p className="text-slate-500 dark:text-slate-400">আজকের বাজার দর ও আপনার আর্থিক অবস্থা দেখুন।</p>
         </div>
         <div className="hidden md:flex gap-4">
@@ -36,48 +36,48 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           </div>
           <button 
             onClick={() => onChangeView('income')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-full font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 hover:bg-blue-700 transition"
+            className="bg-blue-600 text-white px-4 sm:px-6 py-2 rounded-full font-bold shadow-md shadow-blue-500/20 flex items-center gap-2 hover:bg-blue-700 transition"
           >
             <span>+</span> নতুন এন্ট্রি
           </button>
         </div>
       </header>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-3">
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
             <div className="flex justify-between mb-4">
               <span className="p-2 bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 rounded-lg"><TrendingUp className="w-5 h-5"/></span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm">মোট আয় (এই মাস)</p>
-            <h3 className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{formatBDT(totalIncome)}</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold mt-1 text-slate-900 dark:text-white">{formatBDT(totalIncome)}</h3>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
              <div className="flex justify-between mb-4">
               <span className="p-2 bg-rose-100 dark:bg-rose-900/40 text-rose-600 dark:text-rose-400 rounded-lg"><TrendingDown className="w-5 h-5"/></span>
             </div>
             <p className="text-slate-500 dark:text-slate-400 text-sm">মোট ব্যয় (এই মাস)</p>
-            <h3 className="text-3xl font-bold mt-1 text-slate-900 dark:text-white">{formatBDT(totalExpense)}</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold mt-1 text-slate-900 dark:text-white">{formatBDT(totalExpense)}</h3>
           </CardContent>
         </Card>
 
         <Card className="bg-blue-600 dark:bg-blue-700 border-none text-white shadow-md">
-          <CardContent className="p-6">
+          <CardContent className="p-4 sm:p-6">
              <div className="flex justify-between mb-4">
               <span className="p-2 bg-white/20 rounded-lg"><Wallet className="w-5 h-5 text-white"/></span>
             </div>
             <p className="text-blue-100 text-sm">কারেন্ট ব্যালেন্স</p>
-            <h3 className="text-3xl font-bold mt-1 text-white">{formatBDT(balance)}</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold mt-1 text-white">{formatBDT(balance)}</h3>
           </CardContent>
         </Card>
       </div>
 
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center">
+          <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center">
              সাম্প্রতিক লেনদেন
           </h2>
           <button 
@@ -93,7 +93,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
             recentTransactions.map((t) => (
               <div key={t.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm">
                 <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                  <div className={`w-9 sm:w-10 h-9 sm:h-10 rounded-full flex items-center justify-center ${
                     t.type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400'
                   }`}>
                     {t.type === 'income' ? <TrendingUp size={20} /> : <TrendingDown size={20} />}

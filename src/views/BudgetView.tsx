@@ -35,14 +35,14 @@ export function BudgetView() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div className="flex justify-between flex-wrap gap-4 items-center mb-6">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">মাসিক বাজেট</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">মাসিক বাজেট</h2>
         <input 
           type="month" 
           value={selectedMonth}
           onChange={(e) => setSelectedMonth(e.target.value)}
-          className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
         />
       </div>
 
@@ -55,7 +55,7 @@ export function BudgetView() {
                 required
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
+                className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
               >
                 <option value="">নির্বাচন করুন</option>
                 {expenseCategories.map(c => (
@@ -68,13 +68,13 @@ export function BudgetView() {
               <input
                 type="number" required min="0"
                 value={amount} onChange={(e) => setAmount(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
+                className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
                 placeholder="0.00"
               />
             </div>
             <button
               type="submit"
-              className="w-full md:w-auto px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-md shadow-blue-500/20 hover:bg-blue-700 font-bold transition flex items-center justify-center"
+              className="w-full md:w-auto px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl shadow-md shadow-blue-500/20 hover:bg-blue-700 font-bold transition flex items-center justify-center"
             >
               <Plus className="w-5 h-5 mr-2" /> সেট করুন
             </button>
@@ -96,11 +96,11 @@ export function BudgetView() {
 
           return (
             <Card key={budget.id}>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex justify-between items-center mb-4">
-                  <h4 className="font-bold text-lg text-slate-900 dark:text-white">{category.name}</h4>
+                  <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{category.name}</h4>
                   <div className="text-right">
-                    <span className={`font-bold text-lg ${isOverBudget ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
+                    <span className={`font-bold text-base sm:text-lg ${isOverBudget ? 'text-rose-600 dark:text-rose-400' : 'text-slate-900 dark:text-white'}`}>
                       {formatBDT(spent)}
                     </span>
                     <span className="text-slate-500 dark:text-slate-400 text-sm"> / {formatBDT(budget.amount)}</span>

@@ -43,8 +43,8 @@ export function SavingsView() {
   };
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white">সঞ্চয়</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">সঞ্চয়</h2>
 
       <Card>
         <CardContent className="pt-6">
@@ -55,7 +55,7 @@ export function SavingsView() {
                 <input
                   type="text" required
                   value={name} onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
                   placeholder="লক্ষ্যের নাম (উদাঃ হজ্ব, ল্যাপটপ)"
                 />
               </div>
@@ -63,7 +63,7 @@ export function SavingsView() {
                 <input
                   type="number" required min="0"
                   value={targetAmount} onChange={(e) => setTargetAmount(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
                   placeholder="লক্ষ্যমাত্রা (৳)"
                 />
               </div>
@@ -71,13 +71,13 @@ export function SavingsView() {
                 <input
                   type="date"
                   value={deadline} onChange={(e) => setDeadline(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
                 />
               </div>
             </div>
             <button
               type="submit"
-              className="px-6 py-3 bg-blue-600 text-white rounded-2xl shadow-md shadow-blue-500/20 hover:bg-blue-700 font-bold transition flex items-center justify-center w-full md:w-auto"
+              className="px-4 sm:px-6 py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl shadow-md shadow-blue-500/20 hover:bg-blue-700 font-bold transition flex items-center justify-center w-full md:w-auto"
             >
               <Plus className="w-5 h-5 mr-2" /> যোগ করুন
             </button>
@@ -91,14 +91,14 @@ export function SavingsView() {
           
           return (
             <Card key={goal.id}>
-              <CardContent className="p-6">
+              <CardContent className="p-4 sm:p-6">
                 <div className="flex justify-between items-start mb-6">
                   <div className="flex items-center gap-4">
                     <div className="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-2xl text-blue-600 dark:text-blue-400">
                       <Target className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-lg text-slate-900 dark:text-white">{goal.name}</h4>
+                      <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{goal.name}</h4>
                       {goal.deadline && (
                         <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-0.5">
                           সময়সীমা: {new Date(goal.deadline).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric'})}
@@ -127,13 +127,13 @@ export function SavingsView() {
                         value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)}
                         className="w-28 px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900"
                       />
-                      <button type="submit" className="text-sm font-bold px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-md transition text-slate-900">সংরক্ষণ</button>
-                      <button type="button" onClick={() => setActiveGoalId(null)} className="text-sm font-bold px-4 py-2 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition">বাতিল</button>
+                      <button type="submit" className="text-sm font-bold px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-md transition text-slate-900">সংরক্ষণ</button>
+                      <button type="button" onClick={() => setActiveGoalId(null)} className="text-sm font-bold px-3 sm:px-4 py-2 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition">বাতিল</button>
                     </form>
                   ) : (
                     <button 
                       onClick={() => setActiveGoalId(goal.id)}
-                      className="text-sm flex items-center bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 px-4 py-2 rounded-xl transition"
+                      className="text-sm flex items-center bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 sm:px-4 py-2 rounded-xl transition"
                     >
                       <TrendingUp className="w-4 h-4 mr-2" /> টাকা জমা দিন
                     </button>

@@ -18,3 +18,23 @@ CREATE POLICY "Users can view own state" ON app_sync_state FOR SELECT
 CREATE POLICY "Users can update own state" ON app_sync_state FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+
+-- Create profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT,
+  avatar_url TEXT,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now())
+);
+
+-- Turn on RLS for profiles
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+
+-- Allow users to view their own profile
+CREATE POLICY "Users can view own profile" ON profiles FOR SELECT
+  USING (auth.uid() = id);
+
+-- Allow users to insert/update their own profile
+CREATE POLICY "Users can update own profile" ON profiles FOR ALL
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);

@@ -44,10 +44,10 @@ export function ReportsView() {
   const gridColor = isDark ? '#334155' : '#e2e8f0';
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white">রিপোর্ট ও বিশ্লেষণ</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">রিপোর্ট ও বিশ্লেষণ</h2>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         <Card>
           <CardHeader>
             <CardTitle>ক্যাটাগরি অনুযায়ী ব্যয়</CardTitle>

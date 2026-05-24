@@ -41,8 +41,8 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || 'Unknown';
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
         {type === 'income' ? 'আয় যোগ করুন' : 'ব্যয় যোগ করুন'}
       </h2>
 
@@ -59,7 +59,7 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                   step="0.01"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
                   placeholder="0.00"
                 />
               </div>
@@ -71,7 +71,7 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                   required
                   value={date}
                   onChange={(e) => setDate(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
                 />
               </div>
 
@@ -81,7 +81,7 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                   required
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
                 >
                   <option value="">নির্বাচন করুন</option>
                   {typeCategories.map(c => (
@@ -96,7 +96,7 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                   required
                   value={paymentMethodId}
                   onChange={(e) => setPaymentMethodId(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
+                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
                 >
                   <option value="">নির্বাচন করুন</option>
                   {activePaymentMethods.map(p => (
@@ -112,14 +112,14 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
+                className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white shadow-sm"
                 placeholder="বিস্তারিত লিখুন..."
               />
             </div>
 
             <button
               type="submit"
-              className={`w-full flex justify-center items-center py-3 px-4 rounded-full shadow-md text-sm font-bold text-white transition ${
+              className={`w-full flex justify-center items-center py-2.5 sm:py-3 px-3 sm:px-4 rounded-full shadow-md text-sm font-bold text-white transition ${
                 type === 'income' ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20' : 'bg-rose-600 hover:bg-rose-700 shadow-rose-500/20'
               }`}
             >
@@ -139,7 +139,7 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
           filteredTransactions.map(t => (
             <div key={t.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-750">
               <div className="flex items-center gap-4">
-                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                 <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-2xl flex items-center justify-center ${
                     type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400'
                   }`}>
                     {type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
@@ -152,7 +152,7 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <span className={`font-bold text-lg ${type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                <span className={`font-bold text-base sm:text-lg ${type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {type === 'income' ? '+' : '-'}{formatBDT(t.amount)}
                 </span>
                 <button 

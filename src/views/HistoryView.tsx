@@ -22,8 +22,8 @@ export function HistoryView() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">সকল লেনদেন</h2>
+    <div className="space-y-4 sm:space-y-6">
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">সকল লেনদেন</h2>
 
       <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="relative flex-1">
@@ -33,13 +33,13 @@ export function HistoryView() {
             placeholder="খুঁজুন..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+            className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
           />
         </div>
         <select 
           value={filterType}
           onChange={(e) => setFilterType(e.target.value as any)}
-          className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none w-full md:w-48 appearance-none dark:text-white shadow-sm"
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none w-full md:w-48 appearance-none dark:text-white shadow-sm"
         >
           <option value="all">সব ধরন</option>
           <option value="income">আয়</option>
@@ -52,7 +52,7 @@ export function HistoryView() {
           filtered.map(t => (
             <div key={t.id} className="flex items-center justify-between p-4 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm transition hover:bg-slate-50 dark:hover:bg-slate-750">
               <div className="flex items-center gap-4">
-                 <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${
+                 <div className={`w-10 sm:w-12 h-10 sm:h-12 rounded-2xl flex items-center justify-center ${
                     t.type === 'income' ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400' : 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400'
                   }`}>
                     {t.type === 'income' ? <TrendingUp size={24} /> : <TrendingDown size={24} />}
@@ -65,7 +65,7 @@ export function HistoryView() {
                 </div>
               </div>
               <div className="flex items-center space-x-4">
-                <span className={`font-bold text-lg hidden sm:inline ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                <span className={`font-bold text-base sm:text-lg hidden sm:inline ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                   {t.type === 'income' ? '+' : '-'}{formatBDT(t.amount)}
                 </span>
                 <span className={`font-bold sm:hidden ${t.type === 'income' ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
