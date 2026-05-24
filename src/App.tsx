@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppProvider, useAppStore } from './store';
 import { Layout } from './components/Layout';
 import { AuthView } from './views/AuthView';
@@ -14,7 +14,13 @@ import { ViewState } from './types';
 
 function AppContent() {
   const { user } = useAppStore();
-  const [currentView, setCurrentView] = useState<ViewState>('dashboard');
+  const [currentView, setCurrentView] = useState<ViewState>(() => {
+    return (localStorage.getItem('hisab_rokkhok_current_view') as ViewState) || 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('hisab_rokkhok_current_view', currentView);
+  }, [currentView]);
 
   if (!user) {
     return <AuthView />;
