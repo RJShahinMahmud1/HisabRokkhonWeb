@@ -32,7 +32,7 @@ export function AuthView() {
         if (error) throw error;
         // If no error, we probably signed up
         if (errorMsg === '') {
-           setErrorMsg('অ্যাকাউন্ট তৈরি হয়েছে! দয়া করে ইমেইল ভেরিফাই করুন (অথবা আপনার Supabase থেকে ইমেইল ভেরিফিকেশন বন্ধ করুন)।');
+           setErrorMsg('অ্যাকাউন্ট তৈরি হয়েছে! দয়া করে ইমেইল ভেরিফাই করুন।');
         }
       }
     } catch (err: any) {
@@ -53,7 +53,7 @@ export function AuthView() {
             <span className="text-2xl sm:text-3xl font-bold">৳</span>
           </div>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            হিসাব রক্ষক (Supabase)
+            হিসাব রক্ষক
           </h2>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
             আপনার ব্যক্তিগত আয়-ব্যয়ের হিসাব রাখুন সহজে

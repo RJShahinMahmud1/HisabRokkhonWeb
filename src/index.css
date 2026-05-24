@@ -2,6 +2,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+html, body {
+  overscroll-behavior-y: none;
+  scroll-behavior: smooth;
+}
+
 .dark {
   color-scheme: dark;
 }

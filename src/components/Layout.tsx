@@ -54,7 +54,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
           <div className="w-9 sm:w-10 h-9 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">৳</div>
           <h1 className="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-300">হিসাব রক্ষক</h1>
         </div>
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none">
           <nav className="space-y-2">
             {menuItems.map((item) => (
               <button
@@ -114,7 +114,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
           </button>
         </header>
 
-        <div className="flex-1 overflow-y-auto p-3 sm:p-6 lg:p-8 flex flex-col">
+        <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none p-3 sm:p-6 lg:p-8 flex flex-col">
           <div className="max-w-7xl mx-auto w-full flex-1">
             {children}
           </div>
