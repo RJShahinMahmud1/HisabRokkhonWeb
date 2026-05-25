@@ -36,10 +36,6 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     { id: 'profile', label: 'প্রোফাইল', icon: <UserIcon size={18} /> },
   ];
 
-  const bottomNavItems = menuItems.filter(item => 
-    ['dashboard', 'income', 'expense', 'reports', 'profile'].includes(item.id)
-  );
-
   return (
     <div className={cn(
       "flex h-screen relative overflow-hidden font-sans transition-colors",
@@ -99,20 +95,25 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden pb-14 md:pb-0 z-10 relative">
+      <main className="flex-1 flex flex-col h-full overflow-hidden z-10 relative">
         {/* Mobile Header */}
-        <header className={cn(
-          "md:hidden flex items-center justify-between h-10 sm:h-12 px-3 border-b transition-colors",
-          isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
-        )}>
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">৳</div>
-            <h1 className="font-bold sm:text-base text-sm text-blue-900 dark:text-blue-300">হিসাব রক্ষক</h1>
-          </div>
-          <button onClick={logout} className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400">
-            <LogOut size={18} />
-          </button>
-        </header>
+        {currentView !== 'dashboard' && (
+          <header className={cn(
+            "md:hidden flex items-center justify-between h-10 sm:h-12 px-3 border-b transition-colors",
+            isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
+          )}>
+            <div className="flex items-center gap-1">
+              <button onClick={() => onViewChange('dashboard')} className="p-1 sm:p-2 mr-1 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+              </button>
+              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">৳</div>
+              <h1 className="font-bold sm:text-base text-sm text-blue-900 dark:text-blue-300">হিসাব রক্ষক</h1>
+            </div>
+            <button onClick={logout} className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400">
+              <LogOut size={18} />
+            </button>
+          </header>
+        )}
 
         <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none p-3 sm:p-6 lg:p-8 flex flex-col">
           <div className="max-w-7xl mx-auto w-full flex-1">
@@ -130,31 +131,6 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
           </div>
         </div>
       </main>
-
-      {/* Mobile Bottom Navigation */}
-      <nav className={cn(
-        "md:hidden fixed bottom-0 left-0 right-0 border-t z-50 transition-colors",
-        isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
-      )}>
-        <ul className="flex items-center justify-around h-14">
-          {bottomNavItems.map((item) => (
-            <li key={item.id} className="flex-1">
-              <button
-                onClick={() => onViewChange(item.id)}
-                className={cn(
-                  "flex flex-col items-center justify-center w-full h-full space-y-0.5 transition-colors relative",
-                  currentView === item.id 
-                    ? "text-blue-600 dark:text-blue-400" 
-                    : "text-slate-500 dark:text-slate-400 hover:text-blue-900 dark:hover:text-blue-200"
-                )}
-              >
-                {item.icon}
-                <span className="text-[9px] font-medium">{item.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      </nav>
     </div>
   );
 }

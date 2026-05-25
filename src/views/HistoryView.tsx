@@ -5,8 +5,7 @@ import { Card } from '../components/ui/Card';
 import { Trash2, Search, TrendingUp, TrendingDown } from 'lucide-react';
 
 export function HistoryView() {
-  const { transactions, categories, deleteTransaction } = useAppStore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { transactions, categories, deleteTransaction, historySearchTerm, setHistorySearchTerm } = useAppStore();
   const [filterType, setFilterType] = useState<'all' | 'income' | 'expense'>('all');
 
   const getCategoryName = (id: string) => categories.find(c => c.id === id)?.name || 'Unknown';
@@ -16,7 +15,7 @@ export function HistoryView() {
     .filter(t => {
       const catName = getCategoryName(t.categoryId).toLowerCase();
       const note = (t.note || '').toLowerCase();
-      const q = searchTerm.toLowerCase();
+      const q = historySearchTerm.toLowerCase();
       return catName.includes(q) || note.includes(q);
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -31,8 +30,8 @@ export function HistoryView() {
           <input 
             type="text"
             placeholder="খুঁজুন..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={historySearchTerm}
+            onChange={(e) => setHistorySearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 sm:py-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
           />
         </div>

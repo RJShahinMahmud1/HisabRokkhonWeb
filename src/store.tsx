@@ -12,6 +12,7 @@ export interface State {
   savingsGoals: SavingsGoal[];
   budgets: Budget[];
   isDark: boolean;
+  historySearchTerm: string;
 }
 
 const DEFAULT_CATEGORIES: Category[] = [
@@ -43,6 +44,7 @@ const initialState: State = {
   savingsGoals: [],
   budgets: [],
   isDark: false,
+  historySearchTerm: '',
 };
 
 interface AppContextType extends State {
@@ -63,6 +65,7 @@ interface AppContextType extends State {
   updateSavingsGoal: (s: SavingsGoal) => void;
   setBudget: (b: Omit<Budget, 'id'>) => void;
   toggleTheme: () => void;
+  setHistorySearchTerm: (term: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -287,6 +290,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, isDark: !s.isDark }));
   };
 
+  const setHistorySearchTerm = (term: string) => {
+    setState((s) => ({ ...s, historySearchTerm: term }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -308,6 +315,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         updateSavingsGoal,
         setBudget,
         toggleTheme,
+        setHistorySearchTerm,
       }}
     >
       {children}
