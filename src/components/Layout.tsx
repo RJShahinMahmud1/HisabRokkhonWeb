@@ -100,14 +100,8 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
                <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
              </div>
           </div>
-          <div 
-            onClick={(e) => { e.stopPropagation(); logout(); }}
-            className="flex items-center justify-center w-full px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors border border-transparent hover:border-rose-100 dark:hover:border-rose-900/50"
-          >
-            <LogOut size={16} className="mr-2" /> {t.logout}
-          </div>
-        </button>
-      </aside>
+       </button>
+     </aside>
 
       {/* Main Content */}
       <main className="flex-1 flex flex-col h-full overflow-hidden z-10 relative">
@@ -124,9 +118,6 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
               <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">৳</div>
               <h1 className="font-bold sm:text-base text-sm text-blue-900 dark:text-blue-300">{t.accountant}</h1>
             </div>
-            <button onClick={logout} className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400">
-              <LogOut size={18} />
-            </button>
           </header>
         )}
 

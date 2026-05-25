@@ -1,26 +1,17 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Moon, Sun, Plus, Edit2, Trash2, Camera, Mail, Lock } from 'lucide-react';
-import { Category, PaymentMethod } from '../types';
+import { Camera, Lock, Share2, LogOut } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function ProfileView() {
-  const { 
-    isDark, toggleTheme, user, updateProfile,
-    categories, addCategory, updateCategory, deleteCategory,
-    paymentMethods, addPaymentMethod, updatePaymentMethod, deletePaymentMethod
-  } = useAppStore();
-
-  const [newCatName, setNewCatName] = useState('');
-  const [newCatType, setNewCatType] = useState<'income' | 'expense'>('expense');
-
-  const [newPmName, setNewPmName] = useState('');
+  const { user, updateProfile, logout } = useAppStore();
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,72 +30,63 @@ export function ProfileView() {
     }
   };
 
-  const handleEmailUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) {
-      const { error } = await supabase.auth.updateUser({ email });
-      if (error) {
-        alert('ত্রুটি: ' + error.message);
-      } else {
-        alert('ইমেইল আপডেট করা হয়েছে! দয়া করে নতুন ইমেইল ভেরিফাই করুন।');
-      }
-    }
-  };
-
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password) {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) {
-        alert('ত্রুটি: ' + error.message);
-      } else {
-        alert('পাসওয়ার্ড আপডেট করা হয়েছে!');
-        setPassword('');
-      }
+    
+    if (password !== confirmPassword) {
+      alert('নতুন পাসওয়ার্ড দুটি মিলছে না!');
+      return;
+    }
+    
+    if (!currentPassword || !password || !user?.email) {
+      alert('সব তথ্য সঠিকভাবে দিন।');
+      return;
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user.email,
+      password: currentPassword
+    });
+    
+    if (signInError) {
+      alert('বর্তমান পাসওয়ার্ড ভুল হয়েছে!');
+      return;
+    }
+
+    const { error } = await supabase.auth.updateUser({ password });
+    if (error) {
+      alert('ত্রুটি: ' + error.message);
+    } else {
+      alert('পাসওয়ার্ড আপডেট করা হয়েছে!');
+      setCurrentPassword('');
+      setPassword('');
+      setConfirmPassword('');
     }
   };
 
-  const handleAddCategory = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newCatName.trim()) {
-      addCategory({ name: newCatName.trim(), type: newCatType, enabled: true });
-      setNewCatName('');
-    }
-  };
-
-  const handleAddPaymentMethod = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPmName.trim()) {
-      addPaymentMethod({ name: newPmName.trim(), enabled: true });
-      setNewPmName('');
-    }
-  };
-
-  const toggleCategoryStatus = (c: Category) => {
-    updateCategory({ ...c, enabled: !c.enabled });
-  };
-
-  const togglePmStatus = (pm: PaymentMethod) => {
-    updatePaymentMethod({ ...pm, enabled: !pm.enabled });
-  };
-
-  const handleEditCategory = (c: Category) => {
-    const newName = prompt('নতুন নাম দিন:', c.name);
-    if (newName && newName.trim() !== '') {
-      updateCategory({ ...c, name: newName.trim() });
-    }
-  };
-
-  const handleEditPm = (pm: PaymentMethod) => {
-    const newName = prompt('নতুন নাম দিন:', pm.name);
-    if (newName && newName.trim() !== '') {
-      updatePaymentMethod({ ...pm, name: newName.trim() });
+  const handleShare = () => {
+    const url = 'https://web2apkpro.com/public_download.php?project_id=16843&token=8a30c7ab7a';
+    if (navigator.share) {
+      navigator.share({
+        title: 'হিসাব রক্ষক',
+        text: 'আমাদের হিসাব রক্ষক অ্যাপটি ব্যবহার করে দেখুন।',
+        url: url,
+      }).catch((error) => console.log('Error sharing', error));
+    } else {
+      navigator.clipboard.writeText(url);
+      alert('ডাউনলোড লিংক কপি করা হয়েছে!');
     }
   };
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">প্রোফাইল</h2>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">প্রোফাইল</h2>
+        <button onClick={handleShare} className="flex items-center gap-2 bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400 px-4 py-2 rounded-xl font-bold hover:bg-blue-200 dark:hover:bg-blue-900/60 transition">
+          <Share2 className="w-5 h-5" />
+          <span>শেয়ার করুন</span>
+        </button>
+      </div>
 
       <Card>
         <CardHeader>
@@ -145,32 +127,22 @@ export function ProfileView() {
 
       <Card>
         <CardHeader>
-          <CardTitle>অ্যাকাউন্ট সিকিউরিটি</CardTitle>
+          <CardTitle>পাসওয়ার্ড পরিবর্তন</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <form onSubmit={handleEmailUpdate} className="space-y-3">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">ইমেইল পরিবর্তন</label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Mail className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+        <CardContent>
+          <form onSubmit={handlePasswordUpdate} className="space-y-3">
+            <div className="space-y-3">
+              <div className="relative">
+                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
                 <input 
-                  type="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="নতুন ইমেইল"
+                  type="password" 
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="বর্তমান পাসওয়ার্ড"
                   className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
                 />
               </div>
-              <button type="submit" className="w-full sm:w-auto py-2.5 sm:py-3 px-6 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-900 dark:hover:bg-slate-600 transition shadow-sm">
-                পরিবর্তন
-              </button>
-            </div>
-          </form>
-
-          <form onSubmit={handlePasswordUpdate} className="space-y-3">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">পাসওয়ার্ড পরিবর্তন</label>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
+              <div className="relative">
                 <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
                 <input 
                   type="password" 
@@ -180,14 +152,31 @@ export function ProfileView() {
                   className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
                 />
               </div>
-              <button type="submit" className="w-full sm:w-auto py-2.5 sm:py-3 px-6 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-900 dark:hover:bg-slate-600 transition shadow-sm">
-                আপডেট
+              <div className="relative">
+                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+                <input 
+                  type="password" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="নতুন পাসওয়ার্ড রি-টাইপ করুন"
+                  className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                />
+              </div>
+              <button type="submit" className="w-full py-2.5 sm:py-3 px-6 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-900 dark:hover:bg-slate-600 transition shadow-sm">
+                পাসওয়ার্ড আপডেট করুন
               </button>
             </div>
           </form>
         </CardContent>
       </Card>
 
+      <button 
+        onClick={logout}
+        className="w-full flex items-center justify-center gap-2 py-3.5 mt-6 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 rounded-2xl font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition border border-rose-100 dark:border-rose-900/50"
+      >
+        <LogOut className="w-5 h-5" />
+        লগআউট করুন
+      </button>
     </div>
   );
 }
