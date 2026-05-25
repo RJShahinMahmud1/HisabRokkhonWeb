@@ -5,6 +5,7 @@ import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
 import { TransactionView } from './views/TransactionView';
 import { ProfileView } from './views/ProfileView';
+import { SettingsView } from './views/SettingsView';
 import { ReportsView } from './views/ReportsView';
 import { HistoryView } from './views/HistoryView';
 import { LoansView } from './views/LoansView';
@@ -36,7 +37,7 @@ function AppContent() {
       case 'budget': return <BudgetView />;
       case 'reports': return <ReportsView />;
       case 'history': return <HistoryView />;
-      case 'settings':
+      case 'settings': return <SettingsView />;
       case 'profile': return <ProfileView />;
       default: return <DashboardView onChangeView={setCurrentView} />;
     }

@@ -13,18 +13,23 @@ export interface State {
   budgets: Budget[];
   isDark: boolean;
   historySearchTerm: string;
+  lang: 'bn' | 'en';
 }
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: 'c1', name: 'বেতন (Salary)', type: 'income', enabled: true },
-  { id: 'c2', name: 'ব্যবসা (Business)', type: 'income', enabled: true },
-  { id: 'c3', name: 'খাবার (Food & Dining)', type: 'expense', enabled: true },
-  { id: 'c4', name: 'যাতায়াত (Transport)', type: 'expense', enabled: true },
-  { id: 'c5', name: 'বাড়ি ভাড়া (Rent)', type: 'expense', enabled: true },
-  { id: 'c6', name: 'বিল (Utility Bills)', type: 'expense', enabled: true },
-  { id: 'c7', name: 'চিকিৎসা (Healthcare)', type: 'expense', enabled: true },
-  { id: 'c8', name: 'কেনাকাটা (Shopping)', type: 'expense', enabled: true },
-  { id: 'c9', name: 'উপহার (Gifts)', type: 'expense', enabled: true },
+  { id: 'c1', name: 'আয় (Income)', type: 'income', enabled: true },
+  { id: 'c2', name: '🥦 কাঁচাবাজার', type: 'expense', enabled: true },
+  { id: 'c3', name: '🍔 খাবার', type: 'expense', enabled: true },
+  { id: 'c4', name: '🛍️ শপিং', type: 'expense', enabled: true },
+  { id: 'c5', name: '💄 কসমেটিক্স', type: 'expense', enabled: true },
+  { id: 'c6', name: '💊 ঔষধ', type: 'expense', enabled: true },
+  { id: 'c7', name: '🩺 স্বাস্থ্য', type: 'expense', enabled: true },
+  { id: 'c8', name: '📚 একাডেমিক খরচ', type: 'expense', enabled: true },
+  { id: 'c9', name: '🚌 যাতায়াত', type: 'expense', enabled: true },
+  { id: 'c10', name: '📱 মোবাইল রিচার্জ', type: 'expense', enabled: true },
+  { id: 'c11', name: '🧾 ইউটিলিটি বিল', type: 'expense', enabled: true },
+  { id: 'c12', name: '🏠 বাসা ভাড়া', type: 'expense', enabled: true },
+  { id: 'c13', name: '✨ অন্যান্য খরচ', type: 'expense', enabled: true },
 ];
 
 const DEFAULT_PAYMENT_METHODS: PaymentMethod[] = [
@@ -45,6 +50,7 @@ const initialState: State = {
   budgets: [],
   isDark: false,
   historySearchTerm: '',
+  lang: 'bn',
 };
 
 interface AppContextType extends State {
@@ -66,6 +72,7 @@ interface AppContextType extends State {
   setBudget: (b: Omit<Budget, 'id'>) => void;
   toggleTheme: () => void;
   setHistorySearchTerm: (term: string) => void;
+  setLang: (lang: 'bn' | 'en') => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -294,6 +301,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, historySearchTerm: term }));
   };
 
+  const setLang = (lang: 'bn' | 'en') => {
+    setState((s) => ({ ...s, lang }));
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -316,6 +327,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setBudget,
         toggleTheme,
         setHistorySearchTerm,
+        setLang,
       }}
     >
       {children}

@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { formatBDT } from '../lib/utils';
 import { 
-  Calendar, Bell, ChevronDown, BookOpen, Receipt, FileText, 
-  PieChart, Wallet, Activity, ScanLine, User as UserIcon
+  Bell, ChevronDown, BookOpen, Receipt, FileText, 
+  PieChart, Wallet, Activity, ScanLine, User as UserIcon,
+  Settings, Sun, Moon, Globe
 } from 'lucide-react';
 import { ViewState } from '../types';
 
 export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState) => void }) {
-  const { user, transactions, categories, setHistorySearchTerm } = useAppStore();
+  const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang } = useAppStore();
 
   const totalIncome = transactions
     .filter((t) => t.type === 'income')
@@ -21,6 +22,40 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
   const incomeCount = transactions.filter(t => t.type === 'income').length;
   const expenseCount = transactions.filter(t => t.type === 'expense').length;
   const totalCount = transactions.length;
+
+  const t = {
+    welcome: lang === 'bn' ? 'সুস্বাগতম' : 'Welcome',
+    accountant: lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
+    balance: lang === 'bn' ? 'কারেন্ট ব্যালেন্স' : 'Current Balance',
+    transactions: lang === 'bn' ? 'লেনদেন' : 'Transactions',
+    income: lang === 'bn' ? 'আয়' : 'Income',
+    expense: lang === 'bn' ? 'ব্যয়' : 'Expense',
+    history: lang === 'bn' ? 'সব ইতিহাস' : 'History',
+    allHistory: lang === 'bn' ? 'সব হিসাব' : 'All History',
+    newIncome: lang === 'bn' ? 'নতুন আয়' : 'New Income',
+    newExpense: lang === 'bn' ? 'নতুন ব্যয়' : 'New Expense',
+    budget: lang === 'bn' ? 'লাভ-ক্ষতি' : 'Budget',
+    loans: lang === 'bn' ? 'উধারি' : 'Loans',
+    reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
+    savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
+    profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
+    settings: lang === 'bn' ? 'সেটিংস' : 'Settings',
+    allTransactions: lang === 'bn' ? 'সব লেনদেন' : 'All Trx',
+    totalIncome: lang === 'bn' ? 'মোট আয়' : 'Total Income',
+    totalExpense: lang === 'bn' ? 'মোট ব্যয়' : 'Total Expense',
+  };
+
+  const menuItems = [
+    { icon: <BookOpen strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.allHistory, view: 'history' },
+    { icon: <Receipt strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newIncome, view: 'income' },
+    { icon: <FileText strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newExpense, view: 'expense' },
+    { icon: <PieChart strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.budget, view: 'budget' },
+    { icon: <Wallet strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.loans, view: 'loans' },
+    { icon: <Activity strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.reports, view: 'reports' },
+    { icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#32C58F]"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.5-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z"></path><path d="M2 9v1c0 1.1.9 2 2 2h1"></path><path d="M16 11h0"></path></svg>, label: t.savings, view: 'savings' },
+    { icon: <UserIcon strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.profile, view: 'profile' },
+    { icon: <Settings strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.settings, view: 'settings' }
+  ];
 
   return (
     <div className="relative pb-24 font-sans max-w-lg mx-auto md:max-w-none">
@@ -40,18 +75,19 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
             <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></div>
           </div>
           <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">Hi, {user?.name.split(' ')[0]}!</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{lang === 'bn' ? 'হাই' : 'Hi'}, {user?.name.split(' ')[0]}!</h2>
             <div className="flex items-center text-xs font-semibold bg-blue-500 text-white px-2.5 py-0.5 rounded-full cursor-pointer mt-0.5 max-w-max">
-              হিসাব রক্ষক <ChevronDown size={14} className="ml-1 opacity-80" />
+              {t.accountant} <ChevronDown size={14} className="ml-1 opacity-80" />
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button className="p-2 text-slate-600 dark:text-slate-300">
-            <Calendar size={24} />
+          <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">
+            {isDark ? <Sun size={24} /> : <Moon size={24} />}
           </button>
-          <button className="p-2 text-slate-600 dark:text-slate-300">
-            <Bell size={24} />
+          <button onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')} className="p-2 flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold text-sm">
+            <Globe size={24} />
+            <span className="uppercase">{lang}</span>
           </button>
         </div>
       </div>
@@ -59,7 +95,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
       {/* Modern Desktop Header Header Placeholder if needed */}
       <div className="hidden md:flex justify-between items-center mb-6 sm:mb-8">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">সুস্বাগতম, {user?.name.split(' ')[0]}! 👋</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t.welcome}, {user?.name.split(' ')[0]}! 👋</h2>
         </div>
         <div className="flex gap-4">
           <button 
@@ -82,22 +118,22 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
       <div className="grid grid-cols-3 gap-3 mb-6">
         <div className="bg-[#EAF7ED] dark:bg-emerald-950/30 rounded-3xl p-3 sm:p-4 text-center border-b-4 border-emerald-100/50 dark:border-emerald-900/50">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-[#38B06B] dark:text-emerald-400">{totalCount}</h3>
-          <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">লেনদেন</p>
+          <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">{t.transactions}</p>
         </div>
         <div className="bg-[#FFF0F0] dark:bg-rose-950/30 rounded-3xl p-3 sm:p-4 text-center border-b-4 border-rose-100/50 dark:border-rose-900/50">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-[#F05E5E] dark:text-rose-400">{incomeCount}</h3>
-          <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">আয়</p>
+          <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">{t.income}</p>
         </div>
         <div className="bg-[#FFF7EA] dark:bg-amber-950/30 rounded-3xl p-3 sm:p-4 text-center border-b-4 border-amber-100/50 dark:border-amber-900/50">
           <h3 className="text-2xl sm:text-3xl font-extrabold text-[#F5B546] dark:text-amber-500">{expenseCount}</h3>
-          <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">ব্যয়</p>
+          <p className="text-[10px] sm:text-xs font-bold text-slate-500 dark:text-slate-400 mt-1 uppercase">{t.expense}</p>
         </div>
       </div>
 
       {/* Banner */}
       <div className="bg-gradient-to-r from-[#21CD7A] to-[#1AB185] rounded-[1.5rem] p-5 mb-6 text-white relative overflow-hidden flex flex-col justify-center min-h-[110px] shadow-sm">
         <div className="z-10 relative">
-          <p className="text-xs sm:text-sm font-bold mb-1.5 bg-white/20 inline-block px-3 py-1 rounded-full text-white backdrop-blur-sm">কারেন্ট ব্যালেন্স</p>
+          <p className="text-xs sm:text-sm font-bold mb-1.5 bg-white/20 inline-block px-3 py-1 rounded-full text-white backdrop-blur-sm">{t.balance}</p>
           <h3 className="text-3xl sm:text-4xl font-black flex items-center tracking-tight">
              {formatBDT(totalIncome - totalExpense)}
           </h3>
@@ -118,7 +154,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           }}
           className="bg-[#5C9EFC] text-white px-5 sm:px-6 py-2.5 rounded-full text-sm font-bold shadow-md shadow-blue-500/20 whitespace-nowrap"
         >
-          সব ইতিহাস
+          {t.history}
         </button>
         {categories.slice(0, 5).map((category) => (
           <button 
@@ -143,9 +179,9 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           <div className="absolute top-5 right-5 text-white/50">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
           </div>
-          <p className="font-bold text-[15px] sm:text-base opacity-95 mb-0.5 tracking-tight">মোট আয় <span className="opacity-70 font-medium ml-1">✓</span></p>
+          <p className="font-bold text-[15px] sm:text-base opacity-95 mb-0.5 tracking-tight">{t.totalIncome} <span className="opacity-70 font-medium ml-1">✓</span></p>
           <h3 className="text-[22px] sm:text-2xl font-black tracking-tight">{formatBDT(totalIncome).replace('৳', '৳ ')}</h3>
-          <p className="text-[10px] sm:text-xs font-semibold opacity-75 mt-1 sm:mt-1.5 uppercase">সব লেনদেন</p>
+          <p className="text-[10px] sm:text-xs font-semibold opacity-75 mt-1 sm:mt-1.5 uppercase">{t.allTransactions}</p>
         </button>
 
         <button onClick={() => onChangeView('expense')} className="bg-[#E7484B] text-white rounded-[1.5rem] p-4 sm:p-5 relative overflow-hidden text-left shadow-sm">
@@ -155,24 +191,15 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           <div className="absolute top-5 right-5 text-white/50">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
           </div>
-          <p className="font-bold text-[15px] sm:text-base opacity-95 mb-0.5 tracking-tight">মোট ব্যয় <span className="opacity-70 font-medium ml-1">↗</span></p>
+          <p className="font-bold text-[15px] sm:text-base opacity-95 mb-0.5 tracking-tight">{t.totalExpense} <span className="opacity-70 font-medium ml-1">↗</span></p>
           <h3 className="text-[22px] sm:text-2xl font-black tracking-tight">{formatBDT(totalExpense).replace('৳', '৳ ')}</h3>
-          <p className="text-[10px] sm:text-xs font-semibold opacity-75 mt-1 sm:mt-1.5 uppercase">সব লেনদেন</p>
+          <p className="text-[10px] sm:text-xs font-semibold opacity-75 mt-1 sm:mt-1.5 uppercase">{t.allTransactions}</p>
         </button>
       </div>
 
       {/* Grid Menu */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-4 mb-8">
-        {[
-          { icon: <BookOpen strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'সব হিসাব', view: 'history' },
-          { icon: <Receipt strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'নতুন আয়', view: 'income' },
-          { icon: <FileText strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'নতুন ব্যয়', view: 'expense' },
-          { icon: <PieChart strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'লাভ-ক্ষতি', view: 'budget' },
-          { icon: <Wallet strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'উধারি', view: 'loans' },
-          { icon: <Activity strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'রিপোর্ট', view: 'reports' },
-          { icon: <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#32C58F]"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.5-1 2-2h2v-4h-2c0-1-.5-1.5-1-2h0V5z"></path><path d="M2 9v1c0 1.1.9 2 2 2h1"></path><path d="M16 11h0"></path></svg>, label: 'সঞ্চয়', view: 'savings' },
-          { icon: <UserIcon strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: 'প্রোফাইল', view: 'profile' }
-        ].map((item, idx) => (
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-8">
+        {menuItems.map((item, idx) => (
           <button 
             key={idx} 
             onClick={() => onChangeView(item.view as ViewState)}

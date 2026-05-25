@@ -21,19 +21,34 @@ interface LayoutProps {
 }
 
 export function Layout({ children, currentView, onViewChange }: LayoutProps) {
-  const { user, logout, isDark } = useAppStore();
+  const { user, logout, isDark, lang } = useAppStore();
 
   if (!user) return <>{children}</>;
 
+  const t = {
+    dashboard: lang === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard',
+    income: lang === 'bn' ? 'আয়' : 'Income',
+    expense: lang === 'bn' ? 'ব্যয়' : 'Expense',
+    loans: lang === 'bn' ? 'ধার/দেনা' : 'Loans',
+    savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
+    budget: lang === 'bn' ? 'বাজেট' : 'Budget',
+    reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
+    profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
+    settings: lang === 'bn' ? 'সেটিংস' : 'Settings',
+    accountant: lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
+    logout: lang === 'bn' ? 'লগআউট' : 'Logout',
+  };
+
   const menuItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
-    { id: 'dashboard', label: 'ড্যাশবোর্ড', icon: <Home size={18} /> },
-    { id: 'income', label: 'আয়', icon: <Wallet size={18} /> },
-    { id: 'expense', label: 'ব্যয়', icon: <CreditCard size={18} /> },
-    { id: 'loans', label: 'ধার/দেনা', icon: <BookOpen size={18} /> },
-    { id: 'savings', label: 'সঞ্চয়', icon: <PiggyBank size={18} /> },
-    { id: 'budget', label: 'বাজেট', icon: <PieChart size={18} /> },
-    { id: 'reports', label: 'রিপোর্ট', icon: <PieChart size={18} /> },
-    { id: 'profile', label: 'প্রোফাইল', icon: <UserIcon size={18} /> },
+    { id: 'dashboard', label: t.dashboard, icon: <Home size={18} /> },
+    { id: 'income', label: t.income, icon: <Wallet size={18} /> },
+    { id: 'expense', label: t.expense, icon: <CreditCard size={18} /> },
+    { id: 'loans', label: t.loans, icon: <BookOpen size={18} /> },
+    { id: 'savings', label: t.savings, icon: <PiggyBank size={18} /> },
+    { id: 'budget', label: t.budget, icon: <PieChart size={18} /> },
+    { id: 'reports', label: t.reports, icon: <PieChart size={18} /> },
+    { id: 'profile', label: t.profile, icon: <UserIcon size={18} /> },
+    { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
   ];
 
   return (
@@ -48,7 +63,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
       )}>
         <div className="flex items-center gap-3 mb-10">
           <div className="w-9 sm:w-10 h-9 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">৳</div>
-          <h1 className="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-300">হিসাব রক্ষক</h1>
+          <h1 className="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-300">{t.accountant}</h1>
         </div>
         <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none">
           <nav className="space-y-2">
@@ -89,7 +104,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
             onClick={(e) => { e.stopPropagation(); logout(); }}
             className="flex items-center justify-center w-full px-3 py-2 text-sm font-medium text-rose-600 dark:text-rose-400 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors border border-transparent hover:border-rose-100 dark:hover:border-rose-900/50"
           >
-            <LogOut size={16} className="mr-2" /> লগআউট
+            <LogOut size={16} className="mr-2" /> {t.logout}
           </div>
         </button>
       </aside>
@@ -107,7 +122,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
               <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">৳</div>
-              <h1 className="font-bold sm:text-base text-sm text-blue-900 dark:text-blue-300">হিসাব রক্ষক</h1>
+              <h1 className="font-bold sm:text-base text-sm text-blue-900 dark:text-blue-300">{t.accountant}</h1>
             </div>
             <button onClick={logout} className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400">
               <LogOut size={18} />

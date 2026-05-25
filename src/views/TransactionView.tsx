@@ -23,13 +23,19 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || !categoryId || !paymentMethodId) return;
+    
+    let submitCategoryId = categoryId;
+    if (type === 'income' && !submitCategoryId) {
+      submitCategoryId = typeCategories[0]?.id || 'unknown';
+    }
+
+    if (!amount || !paymentMethodId || (type === 'expense' && !submitCategoryId)) return;
 
     addTransaction({
       type,
       amount: Number(amount),
       date,
-      categoryId,
+      categoryId: submitCategoryId,
       paymentMethodId,
       note,
     });
@@ -75,22 +81,31 @@ export function TransactionView({ type }: { type: 'income' | 'expense' }) {
                 />
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ক্যাটাগরি</label>
-                <select
-                  required
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
-                >
-                  <option value="">নির্বাচন করুন</option>
-                  {typeCategories.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
+              {type === 'expense' && (
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">ক্যাটাগরি</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {typeCategories.map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => setCategoryId(c.id)}
+                        className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl border ${
+                          categoryId === c.id 
+                            ? 'border-pink-500 bg-pink-50/50 dark:border-pink-500/50 dark:bg-pink-950/20 text-pink-600 dark:text-pink-400' 
+                            : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300'
+                        } flex items-center justify-start gap-3 transition shadow-sm`}
+                      >
+                        <span className="text-sm sm:text-base font-semibold">
+                          {c.name}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
 
-              <div>
+              <div className={type === 'income' ? '' : 'md:col-span-2'}>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">পেমেন্ট মেথড</label>
                 <select
                   required
