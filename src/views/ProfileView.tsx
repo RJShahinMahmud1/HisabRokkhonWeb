@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Camera, Lock, Share2, LogOut } from 'lucide-react';
+import { Camera, Lock, Share2, LogOut, Download, Upload } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export function ProfileView() {
-  const { user, updateProfile, logout } = useAppStore();
+  const { user, updateProfile, logout, importState } = useAppStore();
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
@@ -76,6 +76,41 @@ export function ProfileView() {
       navigator.clipboard.writeText(url);
       alert('ডাউনলোড লিংক কপি করা হয়েছে!');
     }
+  };
+
+  const handleExport = () => {
+    const rawData = localStorage.getItem('hisab_rokkhok_data');
+    if (rawData) {
+      const blob = new Blob([rawData], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `hisab_rokkhok_backup_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } else {
+      alert("কোন ডাটা পাওয়া যায়নি!");
+    }
+  };
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const content = event.target?.result as string;
+      if (content) {
+         if (importState(content)) {
+           alert("ডাটা সফলভাবে রিস্টোর হয়েছে!");
+         } else {
+           alert("ভুল ফাইল ফরম্যাট!");
+         }
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   };
 
   return (
@@ -167,6 +202,41 @@ export function ProfileView() {
               </button>
             </div>
           </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>ডাটা ব্যাকআপ ও রিস্টোর</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button 
+              onClick={handleExport}
+              className="flex items-center justify-center gap-2 py-3 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-2xl font-bold hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition border border-emerald-200 dark:border-emerald-800/50"
+            >
+              <Download className="w-5 h-5" />
+              ডাটা ব্যাকআপ (Export)
+            </button>
+            <div className="relative">
+              <input 
+                type="file" 
+                accept=".json"
+                onChange={handleImport}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                title="ডাটা রিস্টোর করুন"
+              />
+              <button 
+                className="w-full flex items-center justify-center gap-2 py-3 bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400 rounded-2xl font-bold hover:bg-blue-100 dark:hover:bg-blue-900/40 transition border border-blue-200 dark:border-blue-800/50"
+              >
+                <Upload className="w-5 h-5" />
+                ডাটা রিস্টোর (Import)
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 text-center mt-3">
+            অফলাইনে ডাটা সংরক্ষণের জন্য ব্যাকআপ তৈরি করুন অথবা পূর্বের ব্যাকআপ ফাইল থেকে রিস্টোর করুন।
+          </p>
         </CardContent>
       </Card>
 

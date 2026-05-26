@@ -73,6 +73,7 @@ interface AppContextType extends State {
   toggleTheme: () => void;
   setHistorySearchTerm: (term: string) => void;
   setLang: (lang: 'bn' | 'en') => void;
+  importState: (jsonString: string) => boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -317,6 +318,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, lang }));
   };
 
+  const importState = (jsonString: string) => {
+    try {
+      const parsed = JSON.parse(jsonString);
+      if (parsed && typeof parsed === 'object') {
+        setState((s) => ({ ...s, ...parsed, user: s.user }));
+        return true;
+      }
+      return false;
+    } catch(e) {
+      return false;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -340,6 +354,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleTheme,
         setHistorySearchTerm,
         setLang,
+        importState,
       }}
     >
       {children}
