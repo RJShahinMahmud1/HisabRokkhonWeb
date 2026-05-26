@@ -98,6 +98,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (session) {
         setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '', avatarUrl: session.user.user_metadata?.avatarUrl || '' } }));
         loadFromSupabase(session.user.id);
+      } else {
+        isInitialLoad.current = false;
       }
     });
 
@@ -108,6 +110,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         loadFromSupabase(session.user.id);
       } else {
         setState(s => ({ ...initialState, isDark: s.isDark }));
+        isInitialLoad.current = false;
       }
     });
 
@@ -119,7 +122,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', userId).single();
 
     if (data && data.state) {
-      setState(s => ({ 
+      setState(s => {
+        const nextState = { 
           ...s, 
           ...data.state, 
           user: s.user ? { 
@@ -127,9 +131,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               name: profile?.name || s.user.name, 
               avatarUrl: profile?.avatar_url || s.user.avatarUrl 
           } : s.user 
-      }));
+        };
+        // Signal that remote state is loaded so we don't overwrite it immediately
+        isInitialLoad.current = false;
+        return nextState;
+      });
     } else if (profile) {
-      setState(s => s.user ? { ...s, user: { ...s.user, name: profile.name, avatarUrl: profile.avatar_url } } : s);
+      setState(s => {
+        const nextState = s.user ? { ...s, user: { ...s.user, name: profile.name, avatarUrl: profile.avatar_url } } : s;
+        isInitialLoad.current = false;
+        return nextState;
+      });
+    } else {
+        isInitialLoad.current = false;
     }
   };
 
@@ -158,8 +172,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       return () => clearTimeout(timeout);
     }
-    
-    isInitialLoad.current = false;
     
     if (state.isDark) {
       document.documentElement.classList.add('dark');
