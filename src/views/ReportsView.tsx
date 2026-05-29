@@ -119,7 +119,7 @@ export function ReportsView() {
                   incomeTransactions.map((t, idx) => (
                     <tr key={t.id} className={idx % 2 === 0 ? 'bg-emerald-50/30 dark:bg-emerald-900/10' : 'bg-white dark:bg-slate-900'}>
                       <td className="px-4 py-3 border-b border-r border-emerald-100 dark:border-emerald-900/30 text-slate-700 dark:text-slate-300">{t.date}</td>
-                      <td className="px-4 py-3 border-b border-r border-emerald-100 dark:border-emerald-900/30 text-slate-700 dark:text-slate-300">{t.description || '-'}</td>
+                      <td className="px-4 py-3 border-b border-r border-emerald-100 dark:border-emerald-900/30 text-slate-700 dark:text-slate-300">{t.note || '-'}</td>
                       <td className="px-4 py-3 border-b border-r border-emerald-100 dark:border-emerald-900/30 text-right font-medium text-emerald-600 dark:text-emerald-500">+{formatBDT(t.amount)}</td>
                     </tr>
                   ))
@@ -152,7 +152,7 @@ export function ReportsView() {
                     <tr key={t.id} className={idx % 2 === 0 ? 'bg-rose-50/30 dark:bg-rose-900/10' : 'bg-white dark:bg-slate-900'}>
                       <td className="px-4 py-3 border-b border-r border-rose-100 dark:border-rose-900/30 text-slate-700 dark:text-slate-300">{t.date}</td>
                       <td className="px-4 py-3 border-b border-r border-rose-100 dark:border-rose-900/30 text-slate-700 dark:text-slate-300">{getCategoryName(t.categoryId)}</td>
-                      <td className="px-4 py-3 border-b border-r border-rose-100 dark:border-rose-900/30 text-slate-700 dark:text-slate-300">{t.description || '-'}</td>
+                      <td className="px-4 py-3 border-b border-r border-rose-100 dark:border-rose-900/30 text-slate-700 dark:text-slate-300">{t.note || '-'}</td>
                       <td className="px-4 py-3 border-b border-r border-rose-100 dark:border-rose-900/30 text-right font-medium text-rose-600 dark:text-rose-400">-{formatBDT(t.amount)}</td>
                     </tr>
                   ))
