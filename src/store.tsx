@@ -67,6 +67,7 @@ interface AppContextType extends State {
   deletePaymentMethod: (id: string) => void;
   addLoan: (l: Omit<Loan, 'id'>) => void;
   updateLoan: (l: Loan) => void;
+  deleteLoan: (id: string) => void;
   addSavingsGoal: (s: Omit<SavingsGoal, 'id'>) => void;
   updateSavingsGoal: (s: SavingsGoal) => void;
   setBudget: (b: Omit<Budget, 'id'>) => void;
@@ -271,6 +272,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const deleteLoan = (id: string) => {
+    setState((s) => ({
+      ...s,
+      loans: s.loans.filter((loan) => loan.id !== id),
+    }));
+  };
+
   const addSavingsGoal = (sg: Omit<SavingsGoal, 'id'>) => {
     setState((s) => ({
       ...s,
@@ -348,6 +356,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deletePaymentMethod,
         addLoan,
         updateLoan,
+        deleteLoan,
         addSavingsGoal,
         updateSavingsGoal,
         setBudget,

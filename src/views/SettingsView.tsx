@@ -55,7 +55,7 @@ export function SettingsView() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">সেটিংস</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-6">ক্যাটাগরি ম্যানেজমেন্ট</h2>
 
       <Card>
         <CardContent className="p-4 sm:p-6 flex items-center justify-between">

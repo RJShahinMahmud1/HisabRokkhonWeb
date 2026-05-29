@@ -2,15 +2,17 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { formatBDT } from '../lib/utils';
 import { Card, CardContent } from '../components/ui/Card';
-import { Plus, CheckCircle, Clock } from 'lucide-react';
+import { Plus, CheckCircle, Clock, Trash2 } from 'lucide-react';
 
 export function LoansView() {
-  const { loans, addLoan, updateLoan } = useAppStore();
+  const { loans, addLoan, updateLoan, deleteLoan } = useAppStore();
   const [type, setType] = useState<'loan_given' | 'loan_taken'>('loan_given');
   const [personName, setPersonName] = useState('');
   const [amount, setAmount] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [note, setNote] = useState('');
+
+  const [repayInputs, setRepayInputs] = useState<Record<string, string>>({});
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +42,20 @@ export function LoansView() {
     const loan = loans.find(l => l.id === id);
     if (loan) {
       updateLoan({ ...loan, status: 'cleared', repaidAmount: loan.amount });
+    }
+  };
+
+  const handlePartialRepay = (id: string) => {
+    const loan = loans.find(l => l.id === id);
+    const repayVal = Number(repayInputs[id]);
+    if (loan && repayVal > 0) {
+      const newRepaid = (loan.repaidAmount || 0) + repayVal;
+      if (newRepaid >= loan.amount) {
+        updateLoan({ ...loan, status: 'cleared', repaidAmount: loan.amount });
+      } else {
+        updateLoan({ ...loan, repaidAmount: newRepaid });
+      }
+      setRepayInputs(prev => ({ ...prev, [id]: '' }));
     }
   };
 
@@ -130,7 +146,12 @@ export function LoansView() {
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start">
                     <div>
-                      <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{loan.personName}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{loan.personName}</h4>
+                        <button onClick={() => deleteLoan(loan.id)} className="text-slate-400 hover:text-rose-500 transition-colors" title="ডিলিট করুন">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
                         {loan.type === 'loan_given' ? 'আমি পাবো' : 'আমার কাছে পাবে'}
                       </p>
@@ -148,13 +169,38 @@ export function LoansView() {
                       )}
                     </div>
                   </div>
-                  <div className="mt-4 flex justify-end">
+                  {loan.repaidAmount > 0 && (
+                    <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                      পরিশোধিত: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatBDT(loan.repaidAmount)}</span>
+                      <br/>
+                      বাকি: <span className="font-semibold text-rose-600 dark:text-rose-400">{formatBDT(loan.amount - loan.repaidAmount)}</span>
+                    </div>
+                  )}
+                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                    <div className="flex w-full items-center space-x-2">
+                       <input 
+                         type="number"
+                         min="0"
+                         placeholder="পরিমাণ"
+                         value={repayInputs[loan.id] || ''}
+                         onChange={(e) => setRepayInputs({...repayInputs, [loan.id]: e.target.value})}
+                         className="w-24 sm:w-28 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500/50 outline-none dark:text-white"
+                       />
+                       <button 
+                         onClick={() => handlePartialRepay(loan.id)}
+                         disabled={!repayInputs[loan.id]}
+                         className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 px-3 py-2 rounded-lg transition-colors"
+                       >
+                         জমা
+                       </button>
+                    </div>
                     <button 
                       onClick={() => markCleared(loan.id)}
-                      className="flex items-center text-sm font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 px-3 sm:px-4 py-2 rounded-xl transition-colors border border-emerald-100 dark:border-emerald-800/30 shadow-sm"
+                      className="shrink-0 flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 px-3 py-2 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800/30"
+                      title="সম্পূর্ণ পরিশোধিত"
                     >
-                      <CheckCircle className="w-4 h-4 mr-1.5" />
-                      পরিশোধিত
+                      <CheckCircle className="w-4 h-4 mr-1 sm:mr-1.5" />
+                      <span className="hidden sm:inline">পরিশোধিত</span>
                     </button>
                   </div>
                 </CardContent>
@@ -179,9 +225,18 @@ export function LoansView() {
                       <CheckCircle className="w-3 h-3 mr-1" /> পরিশোধিত
                     </span>
                   </div>
-                  <span className="font-medium text-slate-500 dark:text-slate-400">
-                    {formatBDT(loan.amount)}
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="font-medium text-slate-500 dark:text-slate-400">
+                      {formatBDT(loan.amount)}
+                    </span>
+                    <button
+                      onClick={() => deleteLoan(loan.id)}
+                      className="p-1.5 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-lg transition"
+                      title="ডিলিট করুন"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

@@ -9,7 +9,7 @@ import {
 import { ViewState } from '../types';
 
 export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState) => void }) {
-  const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang } = useAppStore();
+  const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang, loans, savingsGoals } = useAppStore();
 
   const totalIncome = transactions
     .filter((t) => t.type === 'income')
@@ -18,6 +18,18 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
   const totalExpense = transactions
     .filter((t) => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
+
+  let currentBalance = totalIncome - totalExpense;
+  loans.forEach(loan => {
+    if (loan.type === 'loan_given') {
+      currentBalance -= (loan.amount - loan.repaidAmount);
+    } else if (loan.type === 'loan_taken') {
+      currentBalance += (loan.amount - loan.repaidAmount);
+    }
+  });
+  savingsGoals.forEach(goal => {
+    currentBalance -= goal.savedAmount;
+  });
 
   const incomeCount = transactions.filter(t => t.type === 'income').length;
   const expenseCount = transactions.filter(t => t.type === 'expense').length;
@@ -39,7 +51,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
     reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
     savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
     profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
-    settings: lang === 'bn' ? 'সেটিংস' : 'Settings',
+    settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
     allTransactions: lang === 'bn' ? 'সব লেনদেন' : 'All Trx',
     totalIncome: lang === 'bn' ? 'মোট আয়' : 'Total Income',
     totalExpense: lang === 'bn' ? 'মোট ব্যয়' : 'Total Expense',
@@ -135,7 +147,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
         <div className="z-10 relative">
           <p className="text-xs sm:text-sm font-bold mb-1.5 bg-white/20 inline-block px-3 py-1 rounded-full text-white backdrop-blur-sm">{t.balance}</p>
           <h3 className="text-3xl sm:text-4xl font-black flex items-center tracking-tight">
-             {formatBDT(totalIncome - totalExpense)}
+             {formatBDT(currentBalance)}
           </h3>
         </div>
         <div className="absolute -right-10 top-0 bottom-0 w-1/2 bg-[#17A074] skew-x-12 z-0"></div>

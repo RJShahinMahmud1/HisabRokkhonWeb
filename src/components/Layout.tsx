@@ -34,7 +34,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     budget: lang === 'bn' ? 'বাজেট' : 'Budget',
     reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
     profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
-    settings: lang === 'bn' ? 'সেটিংস' : 'Settings',
+    settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
     accountant: lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
     logout: lang === 'bn' ? 'লগআউট' : 'Logout',
   };
