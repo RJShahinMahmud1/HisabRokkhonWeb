@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updateEmail, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -16,6 +16,14 @@ export const loginWithEmail = async (email: string, pass: string) => {
   await signInWithEmailAndPassword(auth, email, pass);
 };
 
+export const updateUserEmail = async (newEmail: string) => {
+  if (auth.currentUser) {
+    await updateEmail(auth.currentUser, newEmail);
+  } else {
+    throw new Error('User not logged in');
+  }
+};
+
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
   try {
@@ -23,6 +31,16 @@ export const signInWithGoogle = async () => {
   } catch (error) {
     console.error('Error signing in with Google', error);
   }
+};
+
+export const setupRecaptcha = (containerId: string) => {
+  return new RecaptchaVerifier(auth, containerId, {
+    size: 'normal'
+  });
+};
+
+export const sendOTP = async (phoneNumber: string, appVerifier: any) => {
+  return await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
 };
 
 export enum OperationType {

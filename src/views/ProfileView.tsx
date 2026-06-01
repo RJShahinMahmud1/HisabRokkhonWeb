@@ -1,21 +1,40 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Camera, Lock, Share2, LogOut, Download, Upload } from 'lucide-react';
+import { Camera, Lock, Share2, LogOut, Download, Upload, Mail } from 'lucide-react';
+import { updateUserEmail } from '../lib/firebase';
 
 export function ProfileView() {
   const { user, updateProfile, logout, importState } = useAppStore();
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newEmail, setNewEmail] = useState(user?.email || '');
+  const [emailUpdating, setEmailUpdating] = useState(false);
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     updateProfile(editName, avatar);
     alert('প্রোফাইল আপডেট হয়েছে!');
+  };
+
+  const handleEmailUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail || newEmail === user?.email) return;
+    
+    setEmailUpdating(true);
+    try {
+      await updateUserEmail(newEmail);
+      alert('ইমেইল সফলভাবে আপডেট হয়েছে!');
+    } catch (error: any) {
+      if (error.code === 'auth/requires-recent-login') {
+         alert('নিরাপত্তার কারণে পুনরায় লগইন করে আবার চেষ্টা করুন।');
+      } else {
+         alert('ত্রুটি: ' + (error.message || 'কিছু একটা ভুল হয়েছে'));
+      }
+    } finally {
+      setEmailUpdating(false);
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -120,6 +139,34 @@ export function ProfileView() {
             </div>
             <button type="submit" className="w-full py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition">
               তথ্য সংরক্ষণ করুন
+            </button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>ইমেইল পরিবর্তন</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleEmailUpdate} className="space-y-4">
+            <div className="relative">
+              <Mail className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
+              <input 
+                type="email" 
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="নতুন ইমেইল এড্রেস"
+                className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
+                required
+              />
+            </div>
+            <button 
+              type="submit" 
+              disabled={emailUpdating || newEmail === user?.email}
+              className="w-full py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {emailUpdating ? 'আপডেট হচ্ছে...' : 'ইমেইল সংরক্ষণ করুন'}
             </button>
           </form>
         </CardContent>
