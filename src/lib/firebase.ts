@@ -1,11 +1,20 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 export const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); // CRITICAL: The app will break without this line
 export const auth = getAuth(app);
+
+export const signUpWithEmail = async (email: string, pass: string, name: string) => {
+  const result = await createUserWithEmailAndPassword(auth, email, pass);
+  await updateProfile(result.user, { displayName: name });
+};
+
+export const loginWithEmail = async (email: string, pass: string) => {
+  await signInWithEmailAndPassword(auth, email, pass);
+};
 
 export const signInWithGoogle = async () => {
   const provider = new GoogleAuthProvider();
