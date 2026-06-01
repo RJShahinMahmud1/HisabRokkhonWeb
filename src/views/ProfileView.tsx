@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Camera, Lock, Share2, LogOut, Download, Upload } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 
 export function ProfileView() {
   const { user, updateProfile, logout, importState } = useAppStore();
@@ -27,40 +26,6 @@ export function ProfileView() {
         setAvatar(reader.result as string);
       };
       reader.readAsDataURL(file);
-    }
-  };
-
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (password !== confirmPassword) {
-      alert('নতুন পাসওয়ার্ড দুটি মিলছে না!');
-      return;
-    }
-    
-    if (!currentPassword || !password || !user?.email) {
-      alert('সব তথ্য সঠিকভাবে দিন।');
-      return;
-    }
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user.email,
-      password: currentPassword
-    });
-    
-    if (signInError) {
-      alert('বর্তমান পাসওয়ার্ড ভুল হয়েছে!');
-      return;
-    }
-
-    const { error } = await supabase.auth.updateUser({ password });
-    if (error) {
-      alert('ত্রুটি: ' + error.message);
-    } else {
-      alert('পাসওয়ার্ড আপডেট করা হয়েছে!');
-      setCurrentPassword('');
-      setPassword('');
-      setConfirmPassword('');
     }
   };
 
@@ -156,51 +121,6 @@ export function ProfileView() {
             <button type="submit" className="w-full py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition">
               তথ্য সংরক্ষণ করুন
             </button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>পাসওয়ার্ড পরিবর্তন</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handlePasswordUpdate} className="space-y-3">
-            <div className="space-y-3">
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
-                <input 
-                  type="password" 
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  placeholder="বর্তমান পাসওয়ার্ড"
-                  className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
-                />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="নতুন পাসওয়ার্ড"
-                  className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
-                />
-              </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3.5 w-5 h-5 text-slate-400" />
-                <input 
-                  type="password" 
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="নতুন পাসওয়ার্ড রি-টাইপ করুন"
-                  className="w-full pl-10 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
-                />
-              </div>
-              <button type="submit" className="w-full py-2.5 sm:py-3 px-6 bg-slate-800 dark:bg-slate-700 text-white rounded-2xl font-bold hover:bg-slate-900 dark:hover:bg-slate-600 transition shadow-sm">
-                পাসওয়ার্ড আপডেট করুন
-              </button>
-            </div>
           </form>
         </CardContent>
       </Card>

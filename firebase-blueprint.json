@@ -1,0 +1,30 @@
+{
+  "entities": {
+    "UserState": {
+      "title": "UserState",
+      "description": "Stores the entire application state for a single user as a serialized JSON string to allow offline-first sync.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "The UID of the user."
+        },
+        "stateStr": {
+          "type": "string",
+          "description": "A JSON serialized representation of the user's entire app state (transactions, loans, budgets)."
+        },
+        "updatedAt": {
+          "type": "timestamp",
+          "description": "When the state was last synced."
+        }
+      },
+      "required": ["userId", "stateStr", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/userStates/{userId}": {
+      "schema": { "$ref": "#/entities/UserState" },
+      "description": "User state documents, keyed by the user's ID."
+    }
+  }
+}

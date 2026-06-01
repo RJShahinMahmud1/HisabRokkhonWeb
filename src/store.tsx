@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Category, PaymentMethod, Transaction, Budget, Loan, SavingsGoal, User } from './types';
-import { supabase } from './lib/supabase';
+import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
 
 export interface State {
   user: User | null;
@@ -95,57 +97,47 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const isInitialLoad = useRef(true);
 
   useEffect(() => {
-    // Initial Auth Load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '', avatarUrl: session.user.user_metadata?.avatarUrl || '' } }));
-        loadFromSupabase(session.user.id);
-      } else {
-        isInitialLoad.current = false;
-      }
-    });
-
-    // Listen to Auth Changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        setState(s => ({ ...s, user: { id: session.user.id, name: session.user.user_metadata?.name || 'User', email: session.user.email || '', avatarUrl: session.user.user_metadata?.avatarUrl || '' } }));
-        loadFromSupabase(session.user.id);
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setState(s => ({ ...s, user: { id: user.uid, name: user.displayName || 'User', email: user.email || '', avatarUrl: user.photoURL || '' } }));
+        loadFromFirebase(user.uid);
       } else {
         setState(s => ({ ...initialState, isDark: s.isDark }));
         isInitialLoad.current = false;
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
-  const loadFromSupabase = async (userId: string) => {
-    const { data, error } = await supabase.from('app_sync_state').select('state').eq('user_id', userId).single();
-    const { data: profile } = await supabase.from('profiles').select('name, avatar_url').eq('id', userId).single();
-
-    if (data && data.state) {
-      setState(s => {
-        const nextState = { 
-          ...s, 
-          ...data.state, 
-          user: s.user ? { 
-              ...s.user, 
-              name: profile?.name || s.user.name, 
-              avatarUrl: profile?.avatar_url || s.user.avatarUrl 
-          } : s.user 
-        };
-        // Signal that remote state is loaded so we don't overwrite it immediately
-        isInitialLoad.current = false;
-        return nextState;
-      });
-    } else if (profile) {
-      setState(s => {
-        const nextState = s.user ? { ...s, user: { ...s.user, name: profile.name, avatarUrl: profile.avatar_url } } : s;
-        isInitialLoad.current = false;
-        return nextState;
-      });
-    } else {
-        isInitialLoad.current = false;
+  const loadFromFirebase = async (userId: string) => {
+    try {
+      const docRef = doc(db, 'userStates', userId);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data && data.stateStr) {
+          const remoteState = JSON.parse(data.stateStr);
+          setState(s => {
+            const nextState = { 
+              ...s, 
+              ...remoteState, 
+              user: s.user ? { 
+                  ...s.user, 
+                  name: auth.currentUser?.displayName || s.user.name, 
+                  avatarUrl: auth.currentUser?.photoURL || s.user.avatarUrl 
+              } : s.user 
+            };
+            isInitialLoad.current = false;
+            return nextState;
+          });
+          return;
+        }
+      }
+      isInitialLoad.current = false;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.GET, `userStates/${userId}`);
+      isInitialLoad.current = false;
     }
   };
 
@@ -159,12 +151,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // @ts-ignore
       delete stateToSave.user;
       
-      const timeout = setTimeout(() => {
-        supabase.from('app_sync_state').upsert({
-          user_id: state.user!.id,
-          state: stateToSave,
-          updated_at: new Date().toISOString()
-        }).then();
+      const timeout = setTimeout(async () => {
+         try {
+           const docRef = doc(db, 'userStates', state.user!.id);
+           await setDoc(docRef, {
+             userId: state.user!.id,
+             stateStr: JSON.stringify(stateToSave),
+             updatedAt: serverTimestamp()
+           }, { merge: true });
+         } catch (error) {
+           handleFirestoreError(error, OperationType.WRITE, `userStates/${state.user!.id}`);
+         }
       }, 1000);
       
       if (state.isDark) {
@@ -187,19 +184,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await auth.signOut();
   };
 
   const updateProfile = async (name: string, avatarUrl: string) => {
-    if (state.user) {
-        await supabase.from('profiles').upsert({
-            id: state.user.id,
-            name: name,
-            avatar_url: avatarUrl,
-            updated_at: new Date().toISOString()
-        });
-        setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl } } : s);
-    }
+    setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl } } : s);
   };
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
