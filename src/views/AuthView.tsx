@@ -83,7 +83,11 @@ export function AuthView() {
         setConfirmationResult(confirmation);
         setOtpSent(true);
       } else {
-        await confirmationResult.confirm(otp);
+        const result = await confirmationResult.confirm(otp);
+        if (!isLogin && name) {
+          const { updateProfile } = await import('firebase/auth');
+          await updateProfile(result.user, { displayName: name });
+        }
       }
     } catch (err: any) {
       if (err.code === 'auth/operation-not-allowed') {
@@ -231,18 +235,34 @@ export function AuthView() {
             <form className="space-y-6" onSubmit={handlePhoneSubmit}>
               <div className="space-y-4">
                 {!otpSent ? (
-                  <div>
-                    <label htmlFor="phone-number" className="sr-only">ফোন নাম্বার</label>
-                    <input
-                      id="phone-number"
-                      type="tel"
-                      required
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                      className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
-                      placeholder="ফোন নাম্বার (যেমন: 017...)"
-                    />
-                  </div>
+                  <>
+                    {!isLogin && (
+                      <div>
+                        <label htmlFor="phone-name" className="sr-only">নাম</label>
+                        <input
+                          id="phone-name"
+                          type="text"
+                          required={!isLogin}
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
+                          placeholder="আপনার নাম"
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label htmlFor="phone-number" className="sr-only">ফোন নাম্বার</label>
+                      <input
+                        id="phone-number"
+                        type="tel"
+                        required
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
+                        placeholder="ফোন নাম্বার (যেমন: 017...)"
+                      />
+                    </div>
+                  </>
                 ) : (
                   <div>
                     <label htmlFor="otp" className="sr-only">OTP কোড</label>
@@ -265,9 +285,22 @@ export function AuthView() {
                   disabled={loading}
                   className="group relative w-full flex justify-center py-2.5 sm:py-3 px-3 sm:px-4 text-sm font-bold rounded-2xl text-white bg-blue-600 hover:bg-blue-700 focus:outline-none shadow-md shadow-blue-500/20 transition-colors disabled:opacity-70"
                 >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (!otpSent ? 'ওটিপি (OTP) পাঠান' : 'ভেরিফাই করুন')}
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (!otpSent ? (isLogin ? 'লগইন করুন' : 'অ্যাকাউন্ট খুলুন (OTP পাঠান)') : 'ভেরিফাই করুন')}
                 </button>
               </div>
+              
+              {!otpSent && (
+                <div className="text-center">
+                  <button
+                    type="button"
+                    disabled={loading}
+                    onClick={() => { setIsLogin(!isLogin); setErrorMsg(''); }}
+                    className="text-sm font-semibold text-blue-600 hover:text-blue-500 dark:text-blue-400"
+                  >
+                    {isLogin ? 'নতুন অ্যাকাউন্ট তৈরি করুন' : 'ইতিমধ্যে অ্যাকাউন্ট আছে? লগইন করুন'}
+                  </button>
+                </div>
+              )}
 
               {otpSent && (
                 <div className="text-center">
