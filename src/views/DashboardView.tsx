@@ -11,14 +11,26 @@ import { ViewState } from '../types';
 export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState) => void }) {
   const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang, loans, savingsGoals } = useAppStore();
   
-  const [showAd, setShowAd] = useState(true);
+  const [showAd, setShowAd] = useState(false);
+
+  React.useEffect(() => {
+    const lastAdTime = localStorage.getItem('last_ad_time');
+    const now = Date.now();
+    
+    // 10 minutes = 600,000 ms
+    if (!lastAdTime || (now - parseInt(lastAdTime, 10)) > 600000) {
+      setShowAd(true);
+    }
+  }, []);
 
   const handleOpenAd = () => {
+    localStorage.setItem('last_ad_time', Date.now().toString());
     setShowAd(false);
     window.open('https://www.effectivecpmnetwork.com/bwwj8fzhx?key=cc27155663e2cb1e243eac0721a33944', '_blank');
   };
 
   const handleCloseAd = () => {
+    localStorage.setItem('last_ad_time', Date.now().toString());
     setShowAd(false);
   };
 
