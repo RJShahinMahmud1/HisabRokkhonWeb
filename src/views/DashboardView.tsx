@@ -12,16 +12,26 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
   const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang, loans, savingsGoals } = useAppStore();
   
   const [showAd, setShowAd] = useState(false);
+  const [adCountdown, setAdCountdown] = useState(10);
 
   React.useEffect(() => {
     const lastAdTime = localStorage.getItem('last_ad_time');
     const now = Date.now();
     
-    // 10 minutes = 600,000 ms
-    if (!lastAdTime || (now - parseInt(lastAdTime, 10)) > 600000) {
+    // 30 minutes = 1800000 ms
+    if (!lastAdTime || (now - parseInt(lastAdTime, 10)) > 1800000) {
       setShowAd(true);
+      setAdCountdown(10);
     }
   }, []);
+
+  React.useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (showAd && adCountdown > 0) {
+      timer = setTimeout(() => setAdCountdown(c => c - 1), 1000);
+    }
+    return () => clearTimeout(timer);
+  }, [showAd, adCountdown]);
 
   const handleOpenAd = () => {
     localStorage.setItem('last_ad_time', Date.now().toString());
@@ -30,6 +40,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
   };
 
   const handleCloseAd = () => {
+    if (adCountdown > 0) return;
     localStorage.setItem('last_ad_time', Date.now().toString());
     setShowAd(false);
   };
@@ -285,9 +296,10 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
                 </button>
                 <button 
                   onClick={handleCloseAd}
-                  className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-bold py-3 px-4 rounded-xl transition-colors"
+                  disabled={adCountdown > 0}
+                  className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  পরে দেখবো
+                  {adCountdown > 0 ? `অফারটি দেখবো না (${adCountdown}s)` : 'অফারটি দেখবো না'}
                 </button>
               </div>
             </div>
