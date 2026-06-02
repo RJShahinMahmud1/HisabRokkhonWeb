@@ -11,23 +11,14 @@ import { ViewState } from '../types';
 export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState) => void }) {
   const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang, loans, savingsGoals } = useAppStore();
   
-  const [showAd, setShowAd] = useState(false);
-
-  React.useEffect(() => {
-    const hasVisited = localStorage.getItem('adsterra_visited_1');
-    if (!hasVisited) {
-      setShowAd(true);
-    }
-  }, []);
+  const [showAd, setShowAd] = useState(true);
 
   const handleOpenAd = () => {
-    localStorage.setItem('adsterra_visited_1', 'true');
     setShowAd(false);
     window.open('https://www.effectivecpmnetwork.com/bwwj8fzhx?key=cc27155663e2cb1e243eac0721a33944', '_blank');
   };
 
   const handleCloseAd = () => {
-    localStorage.setItem('adsterra_visited_1', 'true');
     setShowAd(false);
   };
 
