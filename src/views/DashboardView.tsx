@@ -10,6 +10,26 @@ import { ViewState } from '../types';
 
 export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState) => void }) {
   const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang, loans, savingsGoals } = useAppStore();
+  
+  const [showAd, setShowAd] = useState(false);
+
+  React.useEffect(() => {
+    const hasVisited = localStorage.getItem('adsterra_visited_1');
+    if (!hasVisited) {
+      setShowAd(true);
+    }
+  }, []);
+
+  const handleOpenAd = () => {
+    localStorage.setItem('adsterra_visited_1', 'true');
+    setShowAd(false);
+    window.open('https://www.effectivecpmnetwork.com/bwwj8fzhx?key=cc27155663e2cb1e243eac0721a33944', '_blank');
+  };
+
+  const handleCloseAd = () => {
+    localStorage.setItem('adsterra_visited_1', 'true');
+    setShowAd(false);
+  };
 
   const totalIncome = transactions
     .filter((t) => t.type === 'income')
@@ -242,6 +262,35 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
         </button>
       </div>
 
+      {showAd && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-6 text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2">
+                <Globe size={32} strokeWidth={2} />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">স্পেশাল অফার!</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">
+                আপনার জন্য একটি নতুন অফার রয়েছে। বিস্তারিত জানতে নিচে ক্লিক করুন।
+              </p>
+              <div className="pt-4 flex flex-col gap-3">
+                <button 
+                  onClick={handleOpenAd}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors"
+                >
+                  অফারটি দেখুন
+                </button>
+                <button 
+                  onClick={handleCloseAd}
+                  className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-bold py-3 px-4 rounded-xl transition-colors"
+                >
+                  পরে দেখবো
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
