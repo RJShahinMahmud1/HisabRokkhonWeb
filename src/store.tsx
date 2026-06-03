@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Category, PaymentMethod, Transaction, Budget, Loan, SavingsGoal, User } from './types';
+import { Category, PaymentMethod, Transaction, Budget, Loan, SavingsGoal, User, Post } from './types';
 import { auth, db, handleFirestoreError, OperationType, updateUserProfile } from './lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -16,6 +16,7 @@ export interface State {
   isDark: boolean;
   historySearchTerm: string;
   lang: 'bn' | 'en';
+  posts: Post[];
 }
 
 const DEFAULT_CATEGORIES: Category[] = [
@@ -53,12 +54,15 @@ const initialState: State = {
   isDark: false,
   historySearchTerm: '',
   lang: 'bn',
+  posts: [],
 };
 
 interface AppContextType extends State {
   login: (name: string, email: string) => void;
   logout: () => void;
-  updateProfile: (name: string, avatarUrl: string) => Promise<void>;
+  updateProfile: (name: string, avatarUrl: string, coverUrl?: string, bio?: string, location?: string) => Promise<void>;
+  addPost: (p: Omit<Post, 'id'>) => void;
+  deletePost: (id: string) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
   deleteTransaction: (id: string) => void;
   addCategory: (c: Omit<Category, 'id'>) => void;
@@ -99,7 +103,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
-        setState(s => ({ ...s, user: { id: user.uid, name: user.displayName || 'User', email: user.email || '', avatarUrl: user.photoURL || '' } }));
+        setState(s => ({ ...s, user: { ...s.user, id: user.uid, name: user.displayName || 'User', email: user.email || '', avatarUrl: user.photoURL || '' } }));
         loadFromFirebase(user.uid);
       } else {
         setState(s => ({ ...initialState, isDark: s.isDark }));
@@ -123,9 +127,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ...s, 
               ...remoteState, 
               user: s.user ? { 
+                  ...remoteState.user,
                   ...s.user, 
-                  name: auth.currentUser?.displayName || s.user.name, 
-                  avatarUrl: auth.currentUser?.photoURL || s.user.avatarUrl 
+                  name: auth.currentUser?.displayName || remoteState.user?.name || s.user.name, 
+                  avatarUrl: auth.currentUser?.photoURL || remoteState.user?.avatarUrl || s.user.avatarUrl 
               } : s.user 
             };
             isInitialLoad.current = false;
@@ -148,8 +153,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Remote Sync (debounced)
     if (!isInitialLoad.current && state.user) {
       const stateToSave = { ...state };
-      // @ts-ignore
-      delete stateToSave.user;
       
       const timeout = setTimeout(async () => {
          try {
@@ -187,14 +190,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await auth.signOut();
   };
 
-  const updateProfile = async (name: string, avatarUrl: string) => {
+  const updateProfile = async (name: string, avatarUrl: string, coverUrl?: string, bio?: string, location?: string) => {
     try {
       await updateUserProfile(name, avatarUrl);
-      setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl } } : s);
+      setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl, coverUrl, bio, location } } : s);
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;
     }
+  };
+
+  const addPost = (p: Omit<Post, 'id'>) => {
+    setState((s) => ({
+      ...s,
+      posts: [{ ...p, id: uuidv4() }, ...(s.posts || [])],
+    }));
+  };
+
+  const deletePost = (id: string) => {
+    setState((s) => ({
+      ...s,
+      posts: (s.posts || []).filter((post) => post.id !== id),
+    }));
   };
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
@@ -341,6 +358,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         login,
         logout,
         updateProfile,
+        addPost,
+        deletePost,
         addTransaction,
         deleteTransaction,
         addCategory,

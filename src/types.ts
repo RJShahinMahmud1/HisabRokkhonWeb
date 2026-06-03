@@ -59,4 +59,14 @@ export interface User {
   name: string;
   email: string;
   avatarUrl?: string;
+  coverUrl?: string;
+  bio?: string;
+  location?: string;
+}
+
+export interface Post {
+  id: string;
+  content: string;
+  imageUrl?: string;
+  createdAt: string;
 }

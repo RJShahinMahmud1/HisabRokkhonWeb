@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updatePassword } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
@@ -24,11 +24,13 @@ export const updateUserProfile = async (name: string, photoURL: string) => {
   }
 };
 
-export const updateUserPassword = async (newPassword: string) => {
-  if (auth.currentUser) {
+export const updateUserPassword = async (currentPass: string, newPassword: string) => {
+  if (auth.currentUser && auth.currentUser.email) {
+    const credential = EmailAuthProvider.credential(auth.currentUser.email, currentPass);
+    await reauthenticateWithCredential(auth.currentUser, credential);
     await updatePassword(auth.currentUser, newPassword);
   } else {
-    throw new Error('User not logged in');
+    throw new Error('User not logged in or email not found');
   }
 };
 
