@@ -93,7 +93,6 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
   };
 
   const menuItems = [
-    { icon: <MessageCircle strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.messages, view: 'messages' },
     { icon: <BookOpen strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.allHistory, view: 'history' },
     { icon: <Receipt strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newIncome, view: 'income' },
     { icon: <FileText strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newExpense, view: 'expense' },
@@ -268,8 +267,11 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
         </button>
         
         <div className="relative -mt-9">
-          <button className="w-14 h-14 bg-[#5C9EFC] text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 border-4 border-white dark:border-slate-800 hover:scale-105 transition-transform">
-            <ScanLine size={24} strokeWidth={2.5} />
+          <button 
+            onClick={() => onChangeView('messages')}
+            className="w-14 h-14 bg-[#5C9EFC] text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 border-4 border-white dark:border-slate-800 hover:scale-105 transition-transform"
+          >
+            <MessageCircle size={24} strokeWidth={2.5} />
           </button>
         </div>
 

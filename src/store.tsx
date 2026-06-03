@@ -122,14 +122,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const data = docSnap.data();
         if (data && data.stateStr) {
           const remoteState = JSON.parse(data.stateStr);
+          
+          const nextName = auth.currentUser?.displayName || remoteState.user?.name || 'User';
+          const nextAvatar = auth.currentUser?.photoURL || remoteState.user?.avatarUrl || '';
+          
+          // Background sync to publicProfiles
+          setDoc(doc(db, 'publicProfiles', userId), {
+             name: nextName,
+             avatarUrl: nextAvatar,
+             updatedAt: serverTimestamp()
+          }, { merge: true }).catch(console.error);
+          
           setState(s => {
             const nextState = { 
               ...s, 
               ...remoteState, 
               user: s.user ? { 
                   ...(remoteState.user || {}),
-                  name: auth.currentUser?.displayName || remoteState.user?.name || s.user.name, 
-                  avatarUrl: auth.currentUser?.photoURL || remoteState.user?.avatarUrl || s.user.avatarUrl 
+                  name: nextName, 
+                  avatarUrl: nextAvatar
               } : s.user 
             };
             isInitialLoad.current = false;
@@ -138,6 +149,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           return;
         }
       }
+      
+      // If doc doesn't exist or didn't return early
+      const fallbackName = auth.currentUser?.displayName || 'User';
+      const fallbackAvatar = auth.currentUser?.photoURL || '';
+      setDoc(doc(db, 'publicProfiles', userId), {
+         name: fallbackName,
+         avatarUrl: fallbackAvatar,
+         updatedAt: serverTimestamp()
+      }, { merge: true }).catch(console.error);
+      
       isInitialLoad.current = false;
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, `userStates/${userId}`);
@@ -200,6 +221,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
              await updateUserProfile(currentName, '');
           } else {
              await updateUserProfile(currentName, currentAvatar);
+          }
+          
+          if (state.user?.id) {
+            await setDoc(doc(db, 'publicProfiles', state.user.id), {
+              name: currentName,
+              avatarUrl: currentAvatar,
+              updatedAt: serverTimestamp()
+            }, { merge: true }).catch(e => console.error("Could not sync public profile", e));
           }
       }
       setState(s => s.user ? { ...s, user: { ...s.user, ...updates } } : s);
