@@ -60,7 +60,7 @@ const initialState: State = {
 interface AppContextType extends State {
   login: (name: string, email: string) => void;
   logout: () => void;
-  updateProfile: (name: string, avatarUrl: string, coverUrl?: string, bio?: string, location?: string) => Promise<void>;
+  updateProfile: (updates: Partial<User>) => Promise<void>;
   addPost: (p: Omit<Post, 'id'>) => void;
   deletePost: (id: string) => void;
   addTransaction: (t: Omit<Transaction, 'id'>) => void;
@@ -127,8 +127,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ...s, 
               ...remoteState, 
               user: s.user ? { 
-                  ...remoteState.user,
-                  ...s.user, 
+                  ...(remoteState.user || {}),
                   name: auth.currentUser?.displayName || remoteState.user?.name || s.user.name, 
                   avatarUrl: auth.currentUser?.photoURL || remoteState.user?.avatarUrl || s.user.avatarUrl 
               } : s.user 
@@ -190,10 +189,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     await auth.signOut();
   };
 
-  const updateProfile = async (name: string, avatarUrl: string, coverUrl?: string, bio?: string, location?: string) => {
+  const updateProfile = async (updates: Partial<User>) => {
     try {
-      await updateUserProfile(name, avatarUrl);
-      setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl, coverUrl, bio, location } } : s);
+      if (updates.name || updates.avatarUrl !== undefined) {
+          const currentName = updates.name || state.user?.name || 'User';
+          const currentAvatar = updates.avatarUrl !== undefined ? updates.avatarUrl : (state.user?.avatarUrl || '');
+          await updateUserProfile(currentName, currentAvatar);
+      }
+      setState(s => s.user ? { ...s, user: { ...s.user, ...updates } } : s);
     } catch (error) {
       console.error('Error updating profile:', error);
       throw error;

@@ -12,7 +12,16 @@ export function ProfileView() {
   const [editCoverUrl, setEditCoverUrl] = useState(user?.coverUrl || '');
   const [editBio, setEditBio] = useState(user?.bio || '');
   const [editLocation, setEditLocation] = useState(user?.location || '');
+  const [editDesignation, setEditDesignation] = useState(user?.designation || '');
+  const [editEducation, setEditEducation] = useState(user?.education || '');
+  const [editHobbies, setEditHobbies] = useState(user?.hobbies || '');
+  const [editDob, setEditDob] = useState(user?.dob || '');
+  const [followers, setFollowers] = useState(user?.followers || 1000);
+  const [following, setFollowing] = useState(user?.following || 486);
   
+  const [activeTab, setActiveTab] = useState<'posts' | 'about' | 'photos'>('posts');
+  
+  const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -26,8 +35,21 @@ export function ProfileView() {
 
   const handleProfileUpdate = (e: React.FormEvent) => {
     e.preventDefault();
-    updateProfile(editName, avatar, editCoverUrl, editBio, editLocation);
+    updateProfile({ 
+      name: editName, 
+      avatarUrl: avatar, 
+      coverUrl: editCoverUrl, 
+      bio: editBio, 
+      location: editLocation,
+      designation: editDesignation,
+      education: editEducation,
+      hobbies: editHobbies,
+      dob: editDob,
+      followers: followers,
+      following: following
+    });
     alert('প্রোফাইল আপডেট হয়েছে!');
+    setShowEditModal(false);
   };
 
   const handlePasswordUpdate = async (e: React.FormEvent) => {
@@ -66,32 +88,61 @@ export function ProfileView() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
+  const compressImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
+    return new Promise((resolve) => {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatar(reader.result as string);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+             if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+             }
+          } else {
+             if (height > maxHeight) {
+                width = Math.round((width * maxHeight) / height);
+                height = maxHeight;
+             }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.6));
+        };
+        img.src = e.target?.result as string;
       };
       reader.readAsDataURL(file);
+    });
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const compressed = await compressImage(file, 400, 400);
+      setAvatar(compressed);
     }
   };
 
-  const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setEditCoverUrl(reader.result as string);
-      reader.readAsDataURL(file);
+      const compressed = await compressImage(file, 800, 800);
+      setEditCoverUrl(compressed);
     }
   };
 
-  const handlePostImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePostImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => setPostImage(reader.result as string);
-      reader.readAsDataURL(file);
+      const compressed = await compressImage(file, 800, 800);
+      setPostImage(compressed);
     }
   };
 
@@ -157,41 +208,150 @@ export function ProfileView() {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6 max-w-2xl mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-2xl mx-auto bg-white dark:bg-slate-900 min-h-screen">
       {/* Cover and Avatar Section */}
-      <div className="bg-white dark:bg-slate-800 rounded-3xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
+      <div className="bg-white dark:bg-slate-900 pb-4">
         <div className="relative h-48 sm:h-64 bg-slate-200 dark:bg-slate-700">
           {user?.coverUrl ? (
              <img src={user.coverUrl} alt="Cover" className="w-full h-full object-cover" />
           ) : (
-             <div className="w-full h-full bg-gradient-to-r from-blue-400 to-indigo-500"></div>
+             <div className="w-full h-full bg-gradient-to-r from-rose-400 to-orange-500"></div>
           )}
+          <button 
+            onClick={() => setShowEditModal(true)}
+            className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-md text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition"
+          >
+            <Camera className="w-5 h-5" />
+          </button>
         </div>
         
-        <div className="px-4 sm:px-6 pb-6 text-center sm:text-left">
-          <div className="relative flex justify-center sm:justify-start -mt-16 sm:-mt-20 mb-4">
-            <div className="w-32 h-32 rounded-full border-4 border-white dark:border-slate-800 bg-blue-100 dark:bg-blue-900 overflow-hidden flex items-center justify-center">
-               {user?.avatarUrl ? (
-                 <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-               ) : (
-                 <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">{user?.name?.charAt(0) || 'U'}</span>
-               )}
+        <div className="px-4 sm:px-6">
+          <div className="relative flex justify-start -mt-16 sm:-mt-20 mb-3">
+            <div className="relative">
+              <div className="w-32 h-32 rounded-full border-4 border-white dark:border-slate-900 bg-blue-100 dark:bg-blue-900 overflow-hidden flex items-center justify-center shadow-sm">
+                 {user?.avatarUrl ? (
+                   <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                 ) : (
+                   <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">{user?.name?.charAt(0) || 'U'}</span>
+                 )}
+              </div>
+              <button 
+                onClick={() => setShowEditModal(true)}
+                className="absolute bottom-2 right-2 bg-slate-200 dark:bg-slate-700 p-2 rounded-full border-2 border-white dark:border-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition"
+              >
+                <Camera className="w-4 h-4" />
+              </button>
             </div>
           </div>
           
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">{user?.name || 'User'}</h2>
-            {user?.bio && <p className="text-slate-600 dark:text-slate-300">{user.bio}</p>}
-            {user?.location && (
-              <div className="flex items-center justify-center sm:justify-start gap-1 text-slate-500 dark:text-slate-400 text-sm mt-2">
-                <MapPin className="w-4 h-4" />
-                <span>{user.location}</span>
-              </div>
-            )}
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{user?.name || 'User'}</h2>
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
+              <span>{user?.followers || '1K'} followers</span>
+              <span>•</span>
+              <span>{user?.following || '486'} following</span>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-3">
+            {user?.designation && <p className="text-slate-700 dark:text-slate-300">{user.designation}</p>}
+            {user?.bio && <p className="text-slate-800 dark:text-slate-200">{user.bio}</p>}
+          </div>
+
+          <div className="mt-6 flex gap-3">
+            <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+              <ImageIcon className="w-5 h-5" />
+              Dashboard
+            </button>
+            <button 
+              onClick={() => setShowEditModal(true)}
+              className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+            >
+              <div className="w-5 h-5 flex items-center justify-center text-lg leading-none mb-0.5">+</div>
+              Edit profile
+            </button>
+          </div>
+
+          <div className="mt-6 border-b border-slate-200 dark:border-slate-800 flex gap-6 text-sm font-semibold text-slate-500 dark:text-slate-400">
+            <button 
+              onClick={() => setActiveTab('posts')}
+              className={`pb-3 transition ${activeTab === 'posts' ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >Posts</button>
+            <button 
+              onClick={() => setActiveTab('about')}
+              className={`pb-3 transition ${activeTab === 'about' ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >About</button>
+            <button 
+              onClick={() => setActiveTab('photos')}
+              className={`pb-3 transition ${activeTab === 'photos' ? 'border-b-2 border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400' : 'hover:text-slate-800 dark:hover:text-slate-200'}`}
+            >Photos</button>
           </div>
         </div>
       </div>
 
+      {/* Details Section */}
+      <div className="bg-white dark:bg-slate-900 px-4 sm:px-6 space-y-6 hidden sm:block">
+        {/* We can hide this on very small mobile, but let's keep it visible since it's the requested ui */}
+      </div>
+
+      {activeTab === 'about' && (
+      <div className="px-4 sm:px-6 space-y-6">
+        {/* Personal details */}
+        <div>
+           <div className="flex items-center justify-between mb-4">
+             <h3 className="text-xl font-bold text-slate-900 dark:text-white">Personal details</h3>
+             <button onClick={() => setShowEditModal(true)} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"><Camera className="w-5 h-5"/></button>
+           </div>
+           <div className="space-y-4">
+             {user?.location && (
+               <div className="flex gap-4 items-start">
+                 <MapPin className="w-6 h-6 text-slate-500 mt-0.5" />
+                 <span className="text-slate-800 dark:text-slate-200 text-lg">{user.location}</span>
+               </div>
+             )}
+             {user?.dob && (
+               <div className="flex gap-4 items-start">
+                 <svg className="w-6 h-6 text-slate-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z" /></svg>
+                 <span className="text-slate-800 dark:text-slate-200 text-lg">{user.dob}</span>
+               </div>
+             )}
+           </div>
+        </div>
+
+        {/* Education */}
+        {user?.education && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Education</h3>
+            </div>
+            <div className="flex gap-4 items-start">
+              <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center">
+                 <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-slate-900 dark:text-white">{user.education}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Hobbies */}
+        {user?.hobbies && (
+          <div>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Hobbies</h3>
+            </div>
+            <div className="flex gap-4 items-start">
+              <svg className="w-6 h-6 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+              <p className="text-lg text-slate-900 dark:text-white font-medium">{user.hobbies}</p>
+            </div>
+          </div>
+        )}
+      </div>
+      )}
+
+      {activeTab === 'posts' && (
+        <div className="px-0 sm:px-0 space-y-6">
       {/* Create Post Section */}
       <Card>
         <CardContent className="pt-6">
@@ -292,6 +452,25 @@ export function ProfileView() {
           ))}
         </div>
       )}
+      </div>
+      )}
+
+      {activeTab === 'photos' && (
+        <div className="grid grid-cols-3 gap-1 sm:gap-2">
+          {posts?.filter(p => p.imageUrl).length === 0 ? (
+             <div className="col-span-3 text-center py-12 text-slate-500">
+               <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
+               <p>কোনো ফটো নেই</p>
+             </div>
+          ) : (
+            posts?.filter(p => p.imageUrl).map(post => (
+              <div key={post.id} className="aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden relative cursor-pointer group">
+                <img src={post.imageUrl} alt="User Upload" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Existing Settings Section Header */}
       <div className="flex items-center justify-between pt-8 mb-4 border-t border-slate-200 dark:border-slate-700">
@@ -307,87 +486,148 @@ export function ProfileView() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>প্রোফাইল আপডেট</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleProfileUpdate} className="space-y-4">
-            <div className="flex flex-col space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 flex items-center justify-center overflow-hidden flex-shrink-0">
-                    {avatar ? (
-                      <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="text-2xl px-4 font-bold text-blue-600 dark:text-blue-400">{editName.charAt(0) || 'U'}</span>
-                    )}
-                  </div>
-                  <label className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-1.5 cursor-pointer hover:bg-blue-700 transition">
-                    <Camera className="w-3 h-3 text-white" />
-                    <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
-                  </label>
-                </div>
-                <div className="flex-1 relative">
-                  <div className="h-12 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center text-sm font-semibold text-slate-500 overflow-hidden relative">
-                    {editCoverUrl ? <img src={editCoverUrl} alt="Cover" className="w-full h-full object-cover" /> : 'কভার ছবি যুক্ত করুন'}
-                  </div>
-                  <label className="absolute -bottom-2 -right-2 bg-slate-800 text-white rounded-full p-1.5 cursor-pointer hover:bg-slate-900 shadow-xl border-2 border-white dark:border-slate-800">
-                    <Camera className="w-3 h-3" />
-                    <input type="file" className="hidden" accept="image/*" onChange={handleCoverImageUpload} />
-                  </label>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <input 
-                  type="text" 
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  placeholder="আপনার নাম"
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
-                />
-                <textarea
-                  value={editBio}
-                  onChange={(e) => setEditBio(e.target.value)}
-                  placeholder="আপনার সম্পর্কে কিছু লিখুন (Bio)"
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm resize-none"
-                  rows={2}
-                />
-                <input 
-                  type="text" 
-                  value={editLocation}
-                  onChange={(e) => setEditLocation(e.target.value)}
-                  placeholder="আপনার ঠিকানা (Location)"
-                  className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none shadow-sm"
-                />
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+      <div className="flex flex-col gap-3">
+        <button 
+          onClick={() => setShowPasswordModal(true)}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+        >
+          <Key className="w-5 h-5" />
+          পাসওয়ার্ড পরিবর্তন করুন
+        </button>
+
+        <button 
+          onClick={logout}
+          className="w-full flex items-center justify-center gap-2 py-3 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 rounded-2xl font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition border border-rose-100 dark:border-rose-900/50"
+        >
+          <LogOut className="w-5 h-5" />
+          লগআউট করুন
+        </button>
+      </div>
+
+      {/* Edit Profile Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:items-center sm:justify-center bg-slate-900/40 backdrop-blur-sm sm:p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-t-3xl sm:rounded-3xl overflow-hidden w-full max-w-lg shadow-xl animate-in slide-in-from-bottom-full sm:zoom-in-95 duration-200 max-h-[90vh] flex flex-col">
+            <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white dark:bg-slate-800 sticky top-0 z-10">
+              <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                Edit Profile
+              </h3>
               <button 
-                type="button" 
-                onClick={() => setShowPasswordModal(true)}
-                className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition"
+                onClick={() => setShowEditModal(false)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-slate-800 hover:bg-slate-200 dark:hover:text-white dark:hover:bg-slate-600 transition outline-none"
               >
-                <Key className="w-4 h-4" />
-                পাসওয়ার্ড পরিবর্তন করুন
+                <X className="w-4 h-4" />
               </button>
             </div>
             
-            <button type="submit" className="w-full py-2.5 sm:py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition">
-              তথ্য সংরক্ষণ করুন
-            </button>
-          </form>
-        </CardContent>
-      </Card>
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto">
+              <form id="editProfileForm" onSubmit={handleProfileUpdate} className="space-y-4">
+                <div className="flex flex-col space-y-4">
+                  <div className="flex flex-col items-center space-y-4 mb-4">
+                    <div className="w-full space-y-2">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Cover Photo</p>
+                      <div className="h-32 w-full rounded-xl bg-slate-100 dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 flex items-center justify-center relative overflow-hidden">
+                        {editCoverUrl ? <img src={editCoverUrl} alt="Cover" className="w-full h-full object-cover" /> : <span className="text-sm text-slate-500">No cover photo</span>}
+                        <label className="absolute bottom-2 right-2 bg-slate-800 text-white rounded-full p-2 cursor-pointer shadow-md hover:bg-slate-900">
+                          <Camera className="w-4 h-4" />
+                          <input type="file" className="hidden" accept="image/*" onChange={handleCoverImageUpload} />
+                        </label>
+                      </div>
+                    </div>
+                    <div className="w-full space-y-2">
+                      <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">Profile Picture</p>
+                      <div className="flex items-center justify-center">
+                        <div className="relative">
+                          <div className="w-24 h-24 rounded-full border-4 border-slate-100 dark:border-slate-800 bg-blue-100 dark:bg-blue-900 flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                            {avatar ? (
+                              <img src={avatar} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{editName.charAt(0) || 'U'}</span>
+                            )}
+                          </div>
+                          <label className="absolute bottom-0 right-0 bg-blue-600 rounded-full p-2 cursor-pointer hover:bg-blue-700 shadow-md">
+                            <Camera className="w-4 h-4 text-white" />
+                            <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-      <button 
-        onClick={logout}
-        className="w-full flex items-center justify-center gap-2 py-3.5 mt-6 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 rounded-2xl font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition border border-rose-100 dark:border-rose-900/50"
-      >
-        <LogOut className="w-5 h-5" />
-        লগআউট করুন
-      </button>
+                  <div className="space-y-3">
+                    <input 
+                      type="text" 
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Name"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none"
+                    />
+                    <input 
+                      type="text" 
+                      value={editDesignation}
+                      onChange={(e) => setEditDesignation(e.target.value)}
+                      placeholder="Designation (e.g. Digital creator)"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none"
+                    />
+                    <textarea
+                      value={editBio}
+                      onChange={(e) => setEditBio(e.target.value)}
+                      placeholder="Bio"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none resize-none"
+                      rows={2}
+                    />
+                    <input 
+                      type="text" 
+                      value={editLocation}
+                      onChange={(e) => setEditLocation(e.target.value)}
+                      placeholder="Location"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none"
+                    />
+                    <input 
+                      type="text" 
+                      value={editEducation}
+                      onChange={(e) => setEditEducation(e.target.value)}
+                      placeholder="Education (e.g. Syed Abul Hossain College)"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none"
+                    />
+                    <input 
+                      type="text" 
+                      value={editDob}
+                      onChange={(e) => setEditDob(e.target.value)}
+                      placeholder="Date of Birth"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none"
+                    />
+                    <input 
+                      type="text" 
+                      value={editHobbies}
+                      onChange={(e) => setEditHobbies(e.target.value)}
+                      placeholder="Hobbies (e.g. Web Development · Cricket)"
+                      className="w-full bg-slate-50 dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 px-4 py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 dark:text-white outline-none"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
+                  <button 
+                    type="button" 
+                    onClick={() => { setShowEditModal(false); setShowPasswordModal(true); }}
+                    className="flex items-center gap-2 text-sm font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition"
+                  >
+                    <Key className="w-4 h-4" />
+                    Change Password
+                  </button>
+                </div>
+              </form>
+            </div>
+            
+            <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800">
+               <button form="editProfileForm" type="submit" className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition">
+                 Save Changes
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Backup Modal */}
       {showBackupModal && (

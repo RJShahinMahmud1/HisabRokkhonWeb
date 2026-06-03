@@ -62,6 +62,12 @@ export interface User {
   coverUrl?: string;
   bio?: string;
   location?: string;
+  designation?: string;
+  followers?: number;
+  following?: number;
+  education?: string;
+  hobbies?: string;
+  dob?: string;
 }
 
 export interface Post {
