@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Category, PaymentMethod, Transaction, Budget, Loan, SavingsGoal, User } from './types';
-import { auth, db, handleFirestoreError, OperationType } from './lib/firebase';
+import { auth, db, handleFirestoreError, OperationType, updateUserProfile } from './lib/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
@@ -188,7 +188,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateProfile = async (name: string, avatarUrl: string) => {
-    setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl } } : s);
+    try {
+      await updateUserProfile(name, avatarUrl);
+      setState(s => s.user ? { ...s, user: { ...s.user, name, avatarUrl } } : s);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
   };
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
