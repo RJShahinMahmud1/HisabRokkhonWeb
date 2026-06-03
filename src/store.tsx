@@ -103,11 +103,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        isInitialLoad.current = true;
         setState(s => ({ ...s, user: { ...s.user, id: user.uid, name: user.displayName || 'User', email: user.email || '', avatarUrl: user.photoURL || '' } }));
         loadFromFirebase(user.uid);
       } else {
         setState(s => ({ ...initialState, isDark: s.isDark }));
-        isInitialLoad.current = false;
       }
     });
 
