@@ -114,7 +114,7 @@ export function ProfileView() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.6));
+          resolve(canvas.toDataURL('image/jpeg', 0.5));
         };
         img.src = e.target?.result as string;
       };
@@ -125,7 +125,7 @@ export function ProfileView() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const compressed = await compressImage(file, 400, 400);
+      const compressed = await compressImage(file, 200, 200);
       setAvatar(compressed);
     }
   };
@@ -133,7 +133,7 @@ export function ProfileView() {
   const handleCoverImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const compressed = await compressImage(file, 800, 800);
+      const compressed = await compressImage(file, 600, 600);
       setEditCoverUrl(compressed);
     }
   };
@@ -141,7 +141,7 @@ export function ProfileView() {
   const handlePostImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const compressed = await compressImage(file, 800, 800);
+      const compressed = await compressImage(file, 500, 500);
       setPostImage(compressed);
     }
   };

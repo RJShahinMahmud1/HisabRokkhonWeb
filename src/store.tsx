@@ -194,7 +194,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (updates.name || updates.avatarUrl !== undefined) {
           const currentName = updates.name || state.user?.name || 'User';
           const currentAvatar = updates.avatarUrl !== undefined ? updates.avatarUrl : (state.user?.avatarUrl || '');
-          await updateUserProfile(currentName, currentAvatar);
+          
+          if (currentAvatar.length > 2000) {
+             // Too long for Firebase Auth photoURL (typically means it's base64), update only name
+             await updateUserProfile(currentName, '');
+          } else {
+             await updateUserProfile(currentName, currentAvatar);
+          }
       }
       setState(s => s.user ? { ...s, user: { ...s.user, ...updates } } : s);
     } catch (error) {

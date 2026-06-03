@@ -25,7 +25,7 @@ service cloud.firestore {
       return data.keys().hasAll(['userId', 'stateStr', 'updatedAt']) &&
              data.keys().size() == 3 &&
              data.userId == expectedUserId &&
-             data.stateStr is string && data.stateStr.size() <= 800000 &&
+             data.stateStr is string && data.stateStr.size() <= 1048000 &&
              data.updatedAt == request.time;
     }
 
