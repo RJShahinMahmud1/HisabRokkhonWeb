@@ -38,7 +38,11 @@ export function AuthView() {
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      setErrorMsg(err.message || 'কিছু একটা ভুল হয়েছে');
+      if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/popup-blocked') {
+        setErrorMsg('ব্রাউজার পপআপ ব্লক করেছে। দয়া করে পপআপ অ্যালাউ করুন অথবা "Open in New Tab" বাটনে ক্লিক করে নতুন ট্যাবে ট্রাই করুন।');
+      } else {
+        setErrorMsg(err.message || 'কিছু একটা ভুল হয়েছে');
+      }
     } finally {
       setLoading(false);
     }
@@ -144,6 +148,7 @@ export function AuthView() {
           </div>
           
           <button
+            type="button"
             onClick={handleGoogleSignIn}
 
             disabled={loading}
