@@ -159,7 +159,7 @@ export function ProfileView() {
   };
 
   const handleShare = () => {
-    const url = 'https://web2apkpro.com/public_download.php?project_id=16843&token=8a30c7ab7a';
+    const url = 'https://hisab-rokkhok-xi.vercel.app';
     if (navigator.share) {
       navigator.share({
         title: 'হিসাব রক্ষক',

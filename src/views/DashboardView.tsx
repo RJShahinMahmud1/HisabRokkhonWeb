@@ -4,7 +4,7 @@ import { formatBDT } from '../lib/utils';
 import { 
   Bell, ChevronDown, BookOpen, Receipt, FileText, 
   PieChart, Wallet, Activity, ScanLine, User as UserIcon,
-  Settings, Sun, Moon, Globe
+  Settings, Sun, Moon, Globe, MessageCircle
 } from 'lucide-react';
 import { ViewState } from '../types';
 
@@ -86,12 +86,14 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
     savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
     profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
     settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
+    messages: lang === 'bn' ? 'মেসেজিং' : 'Messaging',
     allTransactions: lang === 'bn' ? 'সব লেনদেন' : 'All Trx',
     totalIncome: lang === 'bn' ? 'মোট আয়' : 'Total Income',
     totalExpense: lang === 'bn' ? 'মোট ব্যয়' : 'Total Expense',
   };
 
   const menuItems = [
+    { icon: <MessageCircle strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.messages, view: 'messages' },
     { icon: <BookOpen strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.allHistory, view: 'history' },
     { icon: <Receipt strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newIncome, view: 'income' },
     { icon: <FileText strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newExpense, view: 'expense' },

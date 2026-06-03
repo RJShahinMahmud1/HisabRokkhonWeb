@@ -47,5 +47,16 @@ service cloud.firestore {
                        
       allow delete: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
     }
+    
+    match /global_messages/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() &&
+                    incoming().keys().hasAll(['senderId', 'senderName', 'text', 'createdAt']) &&
+                    incoming().senderId == request.auth.uid &&
+                    incoming().text is string && incoming().text.size() > 0 && incoming().text.size() <= 1000 &&
+                    incoming().senderName is string &&
+                    incoming().createdAt == request.time;
+      allow update, delete: if false; // no edit/delete for simplicity
+    }
   }
 }

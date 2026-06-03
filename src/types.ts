@@ -52,7 +52,7 @@ export interface Budget {
   month: string; // YYYY-MM
 }
 
-export type ViewState = 'dashboard' | 'income' | 'expense' | 'loans' | 'savings' | 'budget' | 'reports' | 'history' | 'settings' | 'profile';
+export type ViewState = 'dashboard' | 'income' | 'expense' | 'loans' | 'savings' | 'budget' | 'reports' | 'history' | 'settings' | 'profile' | 'messages';
 
 export interface User {
   id: string;

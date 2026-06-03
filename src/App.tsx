@@ -11,6 +11,7 @@ import { HistoryView } from './views/HistoryView';
 import { LoansView } from './views/LoansView';
 import { SavingsView } from './views/SavingsView';
 import { BudgetView } from './views/BudgetView';
+import { MessagesView } from './views/MessagesView';
 import { ViewState } from './types';
 
 function AppContent() {
@@ -39,6 +40,7 @@ function AppContent() {
       case 'history': return <HistoryView />;
       case 'settings': return <SettingsView />;
       case 'profile': return <ProfileView />;
+      case 'messages': return <MessagesView onBack={() => setCurrentView('dashboard')} />;
       default: return <DashboardView onChangeView={setCurrentView} />;
     }
   };
