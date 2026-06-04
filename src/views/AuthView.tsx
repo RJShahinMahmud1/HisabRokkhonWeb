@@ -54,15 +54,21 @@ export function AuthView() {
       isDark ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-800"
     )}>
       <div className="max-w-md w-full space-y-8 bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 z-10 m-4">
-        <div className="text-center">
-          <div className="mx-auto h-12 sm:h-16 w-12 sm:w-16 bg-blue-600 text-white rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-blue-200 dark:shadow-blue-900/20">
-            <span className="text-2xl sm:text-3xl font-bold">৳</span>
+        <div className="text-center flex flex-col items-center">
+          <div className="w-24 h-24 mb-6 rounded-2xl overflow-hidden shadow-lg shadow-blue-200 dark:shadow-blue-900/20 bg-white ring-1 ring-slate-100 dark:ring-slate-700">
+            <img src="/logo.png" alt="Hisab Rokkhok Logo" className="w-full h-full object-cover" onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+            }} />
+            <div className="hidden w-full h-full bg-blue-600 text-white flex items-center justify-center">
+              <span className="text-4xl font-bold">৳</span>
+            </div>
           </div>
           <h2 className="mt-2 text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             হিসাব রক্ষক
           </h2>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-            আপনার ব্যক্তিগত আয়-ব্যয়ের হিসাব রাখুন সহজে
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 font-medium tracking-wide">
+            স্মার্ট অর্থ ব্যবস্থাপনা
           </p>
         </div>
         

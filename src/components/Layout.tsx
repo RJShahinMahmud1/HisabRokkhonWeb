@@ -62,7 +62,13 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
         isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
       )}>
         <div className="flex items-center gap-3 mb-10">
-          <div className="w-9 sm:w-10 h-9 sm:h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white text-xl font-bold">৳</div>
+          <div className="w-10 h-10 rounded-xl overflow-hidden bg-white ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm flex-shrink-0">
+            <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+            }} />
+            <div className="hidden w-full h-full bg-blue-600 text-white flex items-center justify-center text-xl font-bold">৳</div>
+          </div>
           <h1 className="text-xl font-bold tracking-tight text-blue-900 dark:text-blue-300">{t.accountant}</h1>
         </div>
         <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none">
@@ -111,12 +117,18 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
             "md:hidden flex items-center justify-between h-10 sm:h-12 px-3 border-b transition-colors",
             isDark ? "bg-slate-950 border-slate-800" : "bg-white border-slate-200"
           )}>
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <button onClick={() => onViewChange('dashboard')} className="p-1 sm:p-2 mr-1 text-slate-600 dark:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
               </button>
-              <div className="w-7 h-7 bg-blue-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">৳</div>
-              <h1 className="font-bold sm:text-base text-sm text-blue-900 dark:text-blue-300">{t.accountant}</h1>
+              <div className="w-8 h-8 rounded-lg overflow-hidden bg-white ring-1 ring-slate-200 dark:ring-slate-700 shadow-sm flex-shrink-0">
+                <img src="/logo.png" alt="Logo" className="w-full h-full object-cover" onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                }} />
+                <div className="hidden w-full h-full bg-blue-600 text-white flex items-center justify-center text-sm font-bold">৳</div>
+              </div>
+              <h1 className="font-bold sm:text-base text-[15px] tracking-tight text-blue-900 dark:text-blue-300">{t.accountant}</h1>
             </div>
           </header>
         )}
