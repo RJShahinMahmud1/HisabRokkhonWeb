@@ -24,13 +24,35 @@ function AppContent() {
     localStorage.setItem('hisab_rokkhok_current_view', currentView);
   }, [currentView]);
 
+  useEffect(() => {
+    window.history.replaceState({ view: currentView }, '');
+    
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.view) {
+        setCurrentView(event.state.view);
+      } else {
+        setCurrentView('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const changeView = (view: ViewState) => {
+    if (view !== currentView) {
+      window.history.pushState({ view }, '');
+      setCurrentView(view);
+    }
+  };
+
   if (!user) {
     return <AuthView />;
   }
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardView onChangeView={setCurrentView} />;
+      case 'dashboard': return <DashboardView onChangeView={changeView} />;
       case 'income': return <TransactionView type="income" />;
       case 'expense': return <TransactionView type="expense" />;
       case 'loans': return <LoansView />;
@@ -40,13 +62,13 @@ function AppContent() {
       case 'history': return <HistoryView />;
       case 'settings': return <SettingsView />;
       case 'profile': return <ProfileView />;
-      case 'messages': return <MessagesView onBack={() => setCurrentView('dashboard')} />;
-      default: return <DashboardView onChangeView={setCurrentView} />;
+      case 'messages': return <MessagesView onBack={() => changeView('dashboard')} />;
+      default: return <DashboardView onChangeView={changeView} />;
     }
   };
 
   return (
-    <Layout currentView={currentView} onViewChange={setCurrentView}>
+    <Layout currentView={currentView} onViewChange={changeView}>
       {renderView()}
     </Layout>
   );

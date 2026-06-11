@@ -53,7 +53,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
 
   return (
     <div className={cn(
-      "flex h-screen relative overflow-hidden font-sans transition-colors",
+      "flex h-screen w-full relative overflow-hidden font-sans transition-colors pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]",
       isDark ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-800"
     )}>
       {/* Desktop Sidebar */}

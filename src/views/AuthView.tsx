@@ -40,6 +40,8 @@ export function AuthView() {
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/popup-blocked') {
         setErrorMsg('ব্রাউজার পপআপ ব্লক করেছে। দয়া করে পপআপ অ্যালাউ করুন অথবা "Open in New Tab" বাটনে ক্লিক করে নতুন ট্যাবে ট্রাই করুন।');
+      } else if (err.code === 'auth/unauthorized-domain') {
+        setErrorMsg('Firebase Console-এ আপনার ডোমেইনটি যুক্ত নেই। Firebase -> Authentication -> Settings -> Authorized Domains-এ গিয়ে আপনার ওয়েবসাইটের লিংক যুক্ত করুন।');
       } else {
         setErrorMsg(err.message || 'কিছু একটা ভুল হয়েছে');
       }
