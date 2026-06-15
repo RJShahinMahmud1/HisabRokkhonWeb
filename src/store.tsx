@@ -116,6 +116,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const loadFromFirebase = async (userId: string) => {
     try {
+      let currentUsername = undefined;
+      try {
+        const profileSnap = await getDoc(doc(db, 'publicProfiles', userId));
+        if (profileSnap.exists()) {
+          currentUsername = profileSnap.data().username;
+        }
+      } catch(e) {}
+
       const docRef = doc(db, 'userStates', userId);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
@@ -128,8 +136,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           
           // Background sync to publicProfiles
           setDoc(doc(db, 'publicProfiles', userId), {
+             uid: userId,
+             email: auth.currentUser?.email || '',
              name: nextName,
              avatarUrl: nextAvatar,
+             coverUrl: remoteState.user?.coverUrl || '',
+             bio: remoteState.user?.bio || '',
+             location: remoteState.user?.location || '',
+             designation: remoteState.user?.designation || '',
+             education: remoteState.user?.education || '',
+             hobbies: remoteState.user?.hobbies || '',
+             dob: remoteState.user?.dob || '',
+             profileSetupCompleted: remoteState.user?.profileSetupCompleted || false,
+             followers: remoteState.user?.followers || 0,
+             following: remoteState.user?.following || 0,
+             posts: remoteState.posts || [],
              updatedAt: serverTimestamp()
           }, { merge: true }).catch(console.error);
           
@@ -140,7 +161,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               user: s.user ? { 
                   ...(remoteState.user || {}),
                   name: nextName, 
-                  avatarUrl: nextAvatar
+                  avatarUrl: nextAvatar,
+                  username: currentUsername || remoteState.user?.username
               } : s.user 
             };
             isInitialLoad.current = false;
@@ -154,12 +176,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const fallbackName = auth.currentUser?.displayName || 'User';
       const fallbackAvatar = auth.currentUser?.photoURL || '';
       setDoc(doc(db, 'publicProfiles', userId), {
+         uid: userId,
+         email: auth.currentUser?.email || '',
          name: fallbackName,
          avatarUrl: fallbackAvatar,
          updatedAt: serverTimestamp()
       }, { merge: true }).catch(console.error);
       
-      isInitialLoad.current = false;
+      setState(s => {
+         const ns = { ...s, user: s.user ? { ...s.user, username: currentUsername } : s.user };
+         isInitialLoad.current = false;
+         return ns;
+      });
     } catch (error) {
       handleFirestoreError(error, OperationType.GET, `userStates/${userId}`);
       isInitialLoad.current = false;
@@ -181,6 +209,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
              userId: state.user!.id,
              stateStr: JSON.stringify(stateToSave),
              updatedAt: serverTimestamp()
+           }, { merge: true });
+           
+           // Keep posts sync
+           const ppRef = doc(db, 'publicProfiles', state.user!.id);
+           await setDoc(ppRef, {
+              posts: stateToSave.posts || [],
+              updatedAt: serverTimestamp()
            }, { merge: true });
          } catch (error) {
            handleFirestoreError(error, OperationType.WRITE, `userStates/${state.user!.id}`);
@@ -225,8 +260,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           
           if (state.user?.id) {
             await setDoc(doc(db, 'publicProfiles', state.user.id), {
+              uid: state.user.id,
+              email: auth.currentUser?.email || state.user.email || '',
               name: currentName,
               avatarUrl: currentAvatar,
+              coverUrl: updates.coverUrl ?? state.user.coverUrl ?? '',
+              bio: updates.bio ?? state.user.bio ?? '',
+              location: updates.location ?? state.user.location ?? '',
+              designation: updates.designation ?? state.user.designation ?? '',
+              education: updates.education ?? state.user.education ?? '',
+              hobbies: updates.hobbies ?? state.user.hobbies ?? '',
+              dob: updates.dob ?? state.user.dob ?? '',
+              profileSetupCompleted: updates.profileSetupCompleted ?? state.user.profileSetupCompleted ?? false,
+              followers: updates.followers ?? state.user.followers ?? 0,
+              following: updates.following ?? state.user.following ?? 0,
+              posts: state.posts || [],
               updatedAt: serverTimestamp()
             }, { merge: true }).catch(e => console.error("Could not sync public profile", e));
           }

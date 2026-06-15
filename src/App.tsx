@@ -11,7 +11,7 @@ import { HistoryView } from './views/HistoryView';
 import { LoansView } from './views/LoansView';
 import { SavingsView } from './views/SavingsView';
 import { BudgetView } from './views/BudgetView';
-import { MessagesView } from './views/MessagesView';
+import { MessengerView } from './views/MessengerView';
 import { ViewState } from './types';
 
 function AppContent() {
@@ -19,40 +19,27 @@ function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>(() => {
     return (localStorage.getItem('hisab_rokkhok_current_view') as ViewState) || 'dashboard';
   });
+  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
 
   useEffect(() => {
     localStorage.setItem('hisab_rokkhok_current_view', currentView);
-  }, [currentView]);
-
-  useEffect(() => {
-    window.history.replaceState({ view: currentView }, '');
-    
-    const handlePopState = (event: PopStateEvent) => {
-      if (event.state && event.state.view) {
-        setCurrentView(event.state.view);
-      } else {
-        setCurrentView('dashboard');
-      }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  const changeView = (view: ViewState) => {
-    if (view !== currentView) {
-      window.history.pushState({ view }, '');
-      setCurrentView(view);
+    if (currentView !== 'profile') {
+      setViewingProfileId(null);
     }
-  };
+  }, [currentView]);
 
   if (!user) {
     return <AuthView />;
   }
 
+  const handleViewProfile = (uid: string) => {
+    setViewingProfileId(uid);
+    setCurrentView('profile');
+  };
+
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardView onChangeView={changeView} />;
+      case 'dashboard': return <DashboardView onChangeView={setCurrentView} />;
       case 'income': return <TransactionView type="income" />;
       case 'expense': return <TransactionView type="expense" />;
       case 'loans': return <LoansView />;
@@ -61,14 +48,14 @@ function AppContent() {
       case 'reports': return <ReportsView />;
       case 'history': return <HistoryView />;
       case 'settings': return <SettingsView />;
-      case 'profile': return <ProfileView />;
-      case 'messages': return <MessagesView onBack={() => changeView('dashboard')} />;
-      default: return <DashboardView onChangeView={changeView} />;
+      case 'profile': return <ProfileView profileId={viewingProfileId} onBack={() => { setViewingProfileId(null); setCurrentView('messages'); }} />;
+      case 'messages': return <MessengerView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
+      default: return <DashboardView onChangeView={setCurrentView} />;
     }
   };
 
   return (
-    <Layout currentView={currentView} onViewChange={changeView}>
+    <Layout currentView={currentView} onViewChange={setCurrentView}>
       {renderView()}
     </Layout>
   );

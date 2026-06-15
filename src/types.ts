@@ -57,6 +57,7 @@ export type ViewState = 'dashboard' | 'income' | 'expense' | 'loans' | 'savings'
 export interface User {
   id: string;
   name: string;
+  username?: string;
   email: string;
   avatarUrl?: string;
   coverUrl?: string;
@@ -68,6 +69,7 @@ export interface User {
   education?: string;
   hobbies?: string;
   dob?: string;
+  profileSetupCompleted?: boolean;
 }
 
 export interface Post {

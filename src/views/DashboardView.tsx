@@ -92,6 +92,34 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
     totalExpense: lang === 'bn' ? 'মোট ব্যয়' : 'Total Expense',
   };
 
+  const [totalUnread, setTotalUnread] = React.useState(0);
+  React.useEffect(() => {
+    if (!user) return;
+    let unsub: (() => void) | null = null;
+    let isMounted = true;
+    import('firebase/firestore').then(({ query, collection, where, onSnapshot }) => {
+        import('../lib/firebase').then(({ db }) => {
+            if (!isMounted) return;
+            unsub = onSnapshot(query(collection(db, 'conversations'), where('participants', 'array-contains', user.id)), (snapshot) => {
+                let unread = 0;
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if(data.unreadCount && data.unreadCount[user.id] > 0) {
+                        unread += data.unreadCount[user.id];
+                    }
+                });
+                setTotalUnread(unread);
+            }, (error) => {
+                // Ignore silent permission errors on logout
+            });
+        });
+    });
+    return () => {
+        isMounted = false;
+        if (unsub) unsub();
+    };
+  }, [user]);
+
   const menuItems = [
     { icon: <BookOpen strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.allHistory, view: 'history' },
     { icon: <Receipt strokeWidth={1.5} size={26} className="text-[#32C58F]" />, label: t.newIncome, view: 'income' },
@@ -269,9 +297,14 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
         <div className="relative -mt-9">
           <button 
             onClick={() => onChangeView('messages')}
-            className="w-14 h-14 bg-[#5C9EFC] text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 border-4 border-white dark:border-slate-800 hover:scale-105 transition-transform"
+            className="w-14 h-14 bg-[#5C9EFC] text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 border-4 border-white dark:border-slate-800 hover:scale-105 transition-transform relative"
           >
             <MessageCircle size={24} strokeWidth={2.5} />
+            {totalUnread > 0 && (
+                <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white border-2 border-white dark:border-slate-800 rounded-full text-[10px] flex items-center justify-center font-bold shadow-sm">
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                </span>
+            )}
           </button>
         </div>
 

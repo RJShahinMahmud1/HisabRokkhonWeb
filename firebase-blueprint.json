@@ -19,12 +19,67 @@
         }
       },
       "required": ["userId", "stateStr", "updatedAt"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Public profile of a user for searching and chatting.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "isOnline": { "type": "boolean" },
+        "lastSeen": { "type": "timestamp" },
+        "updatedAt": { "type": "timestamp" }
+      },
+      "required": ["uid", "name", "email", "updatedAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "A direct message thread between two users.",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessageText": { "type": "string" },
+        "lastMessageSenderId": { "type": "string" },
+        "lastMessageTime": { "type": "timestamp" },
+        "unreadCount": { "type": "object" },
+        "typingUsers": { "type": "object" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["participants", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single chat message.",
+      "type": "object",
+      "properties": {
+        "conversationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "status": { "type": "string", "enum": ["sent", "delivered", "seen"] },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["conversationId", "senderId", "text", "status", "createdAt"]
     }
   },
   "firestore": {
     "/userStates/{userId}": {
       "schema": { "$ref": "#/entities/UserState" },
       "description": "User state documents, keyed by the user's ID."
+    },
+    "/publicProfiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Public user profiles"
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Chat conversations"
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Messages inside a conversation"
     }
   }
 }

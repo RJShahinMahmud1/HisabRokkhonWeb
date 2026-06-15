@@ -1,11 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X } from 'lucide-react';
-import { updateUserPassword } from '../lib/firebase';
+import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft } from 'lucide-react';
+import { updateUserPassword, db } from '../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { ProfileSetupWizard } from '../components/ProfileSetupWizard';
+import { PublicProfile } from '../lib/chatService';
 
-export function ProfileView() {
+export function ProfileView({ profileId, onBack }: { profileId?: string | null, onBack?: () => void }) {
   const { user, updateProfile, logout, importState, addPost, deletePost, posts } = useAppStore();
+
+  const isOwnProfile = !profileId || profileId === user?.id;
+
+  const [publicUser, setPublicUser] = useState<any>(null);
+  const [loadingPublic, setLoadingPublic] = useState(!isOwnProfile);
+
+  useEffect(() => {
+    if (!isOwnProfile && profileId) {
+       getDoc(doc(db, 'publicProfiles', profileId)).then(snap => {
+           if (snap.exists()) {
+               setPublicUser(snap.data());
+           }
+           setLoadingPublic(false);
+       });
+    }
+  }, [profileId, isOwnProfile]);
+
+  const displayUser = isOwnProfile ? user : publicUser;
+  const displayPosts = isOwnProfile ? posts : (publicUser?.posts || []);
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
@@ -207,69 +229,101 @@ export function ProfileView() {
     e.target.value = '';
   };
 
+  if (isOwnProfile && user?.profileSetupCompleted === false) {
+      return <ProfileSetupWizard onComplete={() => {}} />;
+  }
+
+  if (loadingPublic) {
+      return <div className="flex justify-center py-12"><div className="w-8 h-8 rounded-full border-4 border-blue-500 border-t-transparent animate-spin"></div></div>;
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6 max-w-2xl mx-auto bg-white dark:bg-slate-900 min-h-screen">
+       {/* Top Bar for Back button if looking at other profile */}
+       {!isOwnProfile && onBack && (
+           <div className="flex items-center p-4 sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md z-20 border-b border-slate-100 dark:border-slate-800">
+               <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-800 dark:text-white">
+                   <ArrowLeft className="w-5 h-5" />
+               </button>
+               <h1 className="ml-2 font-bold text-lg text-slate-900 dark:text-white">{displayUser?.name || 'Profile'}</h1>
+           </div>
+       )}
+
       {/* Cover and Avatar Section */}
       <div className="bg-white dark:bg-slate-900 pb-4">
         <div className="relative h-48 sm:h-64 bg-slate-200 dark:bg-slate-700">
-          {user?.coverUrl ? (
-             <img src={user.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+          {displayUser?.coverUrl ? (
+             <img src={displayUser.coverUrl} alt="Cover" className="w-full h-full object-cover" />
           ) : (
              <div className="w-full h-full bg-gradient-to-r from-rose-400 to-orange-500"></div>
           )}
-          <button 
-            onClick={() => setShowEditModal(true)}
-            className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-md text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition"
-          >
-            <Camera className="w-5 h-5" />
-          </button>
+          {isOwnProfile && (
+              <button 
+                onClick={() => setShowEditModal(true)}
+                className="absolute bottom-4 right-4 bg-white/90 dark:bg-slate-800/90 p-2 rounded-full shadow-md text-slate-800 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-800 transition"
+              >
+                <Camera className="w-5 h-5" />
+              </button>
+          )}
         </div>
         
         <div className="px-4 sm:px-6">
           <div className="relative flex justify-start -mt-16 sm:-mt-20 mb-3">
             <div className="relative">
               <div className="w-32 h-32 rounded-full border-4 border-white dark:border-slate-900 bg-blue-100 dark:bg-blue-900 overflow-hidden flex items-center justify-center shadow-sm">
-                 {user?.avatarUrl ? (
-                   <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                 {displayUser?.avatarUrl ? (
+                   <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                  ) : (
-                   <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">{user?.name?.charAt(0) || 'U'}</span>
+                   <span className="text-4xl font-bold text-blue-600 dark:text-blue-400">{displayUser?.name?.charAt(0) || 'U'}</span>
                  )}
               </div>
-              <button 
-                onClick={() => setShowEditModal(true)}
-                className="absolute bottom-2 right-2 bg-slate-200 dark:bg-slate-700 p-2 rounded-full border-2 border-white dark:border-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
+              {isOwnProfile && (
+                  <button 
+                    onClick={() => setShowEditModal(true)}
+                    className="absolute bottom-2 right-2 bg-slate-200 dark:bg-slate-700 p-2 rounded-full border-2 border-white dark:border-slate-900 text-slate-800 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition"
+                  >
+                    <Camera className="w-4 h-4" />
+                  </button>
+              )}
             </div>
           </div>
           
           <div className="space-y-1">
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{user?.name || 'User'}</h2>
-            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 font-medium">
-              <span>{user?.followers || '1K'} followers</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white">{displayUser?.name || 'User'}</h2>
+            {displayUser?.username && <p className="text-sm font-medium text-slate-500">@{displayUser.username}</p>}
+            {displayUser?.designation && <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{displayUser.designation}</p>}
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 font-medium mt-1">
+              <span>{displayUser?.followers || 0} followers</span>
               <span>•</span>
-              <span>{user?.following || '486'} following</span>
+              <span>{displayUser?.following || 0} following</span>
             </div>
           </div>
-
+          
           <div className="mt-4 space-y-3">
-            {user?.designation && <p className="text-slate-700 dark:text-slate-300">{user.designation}</p>}
-            {user?.bio && <p className="text-slate-800 dark:text-slate-200">{user.bio}</p>}
+            {displayUser?.bio && <p className="text-slate-800 dark:text-slate-200">{displayUser.bio}</p>}
           </div>
 
           <div className="mt-6 flex gap-3">
-            <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
-              <ImageIcon className="w-5 h-5" />
-              Dashboard
-            </button>
-            <button 
-              onClick={() => setShowEditModal(true)}
-              className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <div className="w-5 h-5 flex items-center justify-center text-lg leading-none mb-0.5">+</div>
-              Edit profile
-            </button>
+             {isOwnProfile ? (
+                 <>
+                    <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2">
+                      <ImageIcon className="w-5 h-5" />
+                      Dashboard
+                    </button>
+                    <button 
+                      onClick={() => setShowEditModal(true)}
+                      className="flex-1 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-slate-100 font-semibold py-2 rounded-lg transition-colors flex items-center justify-center gap-2"
+                    >
+                      <div className="w-5 h-5 flex items-center justify-center text-lg leading-none mb-0.5">+</div>
+                      Edit profile
+                    </button>
+                 </>
+             ) : (
+                 <>
+                    <button className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm">ফোলো করুন</button>
+                    <button onClick={onBack} className="flex-1 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-lg font-semibold transition">মেসেজ দিন</button>
+                 </>
+             )}
           </div>
 
           <div className="mt-6 border-b border-slate-200 dark:border-slate-800 flex gap-6 text-sm font-semibold text-slate-500 dark:text-slate-400">
@@ -300,26 +354,26 @@ export function ProfileView() {
         <div>
            <div className="flex items-center justify-between mb-4">
              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Personal details</h3>
-             <button onClick={() => setShowEditModal(true)} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"><Camera className="w-5 h-5"/></button>
+             {isOwnProfile && <button onClick={() => setShowEditModal(true)} className="text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"><Camera className="w-5 h-5"/></button>}
            </div>
            <div className="space-y-4">
-             {user?.location && (
+             {displayUser?.location && (
                <div className="flex gap-4 items-start">
                  <MapPin className="w-6 h-6 text-slate-500 mt-0.5" />
-                 <span className="text-slate-800 dark:text-slate-200 text-lg">{user.location}</span>
+                 <span className="text-slate-800 dark:text-slate-200 text-lg">{displayUser.location}</span>
                </div>
              )}
-             {user?.dob && (
+             {displayUser?.dob && (
                <div className="flex gap-4 items-start">
                  <svg className="w-6 h-6 text-slate-500 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 15.546c-.523 0-1.046.151-1.5.454a2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.704 2.704 0 00-3 0 2.704 2.704 0 01-3 0 2.701 2.701 0 00-1.5-.454M9 6v2m3-2v2m3-2v2M9 3h.01M12 3h.01M15 3h.01M21 21v-7a2 2 0 00-2-2H5a2 2 0 00-2 2v7h18zm-3-9v-2a2 2 0 00-2-2H8a2 2 0 00-2 2v2h12z" /></svg>
-                 <span className="text-slate-800 dark:text-slate-200 text-lg">{user.dob}</span>
+                 <span className="text-slate-800 dark:text-slate-200 text-lg">{displayUser.dob}</span>
                </div>
              )}
            </div>
         </div>
 
         {/* Education */}
-        {user?.education && (
+        {displayUser?.education && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Education</h3>
@@ -329,21 +383,21 @@ export function ProfileView() {
                  <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" /></svg>
               </div>
               <div>
-                <p className="text-lg font-semibold text-slate-900 dark:text-white">{user.education}</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-white">{displayUser?.education}</p>
               </div>
             </div>
           </div>
         )}
 
         {/* Hobbies */}
-        {user?.hobbies && (
+        {displayUser?.hobbies && (
           <div>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white">Hobbies</h3>
             </div>
             <div className="flex gap-4 items-start">
               <svg className="w-6 h-6 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
-              <p className="text-lg text-slate-900 dark:text-white font-medium">{user.hobbies}</p>
+              <p className="text-lg text-slate-900 dark:text-white font-medium">{displayUser.hobbies}</p>
             </div>
           </div>
         )}
@@ -353,15 +407,16 @@ export function ProfileView() {
       {activeTab === 'posts' && (
         <div className="px-0 sm:px-0 space-y-6">
       {/* Create Post Section */}
+      {isOwnProfile && (
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleCreatePost} className="space-y-4">
             <div className="flex gap-4">
               <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                 {user?.avatarUrl ? (
-                   <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                 {displayUser?.avatarUrl ? (
+                   <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                  ) : (
-                   <span className="font-bold text-blue-600 dark:text-blue-400">{user?.name?.charAt(0) || 'U'}</span>
+                   <span className="font-bold text-blue-600 dark:text-blue-400">{displayUser?.name?.charAt(0) || 'U'}</span>
                  )}
               </div>
               <div className="flex-1 space-y-3">
@@ -407,35 +462,38 @@ export function ProfileView() {
           </form>
         </CardContent>
       </Card>
+      )}
 
       {/* Posts Timeline */}
-      {posts && posts.length > 0 && (
+      {displayPosts && displayPosts.length > 0 && (
         <div className="space-y-4">
-          {posts.map(post => (
+          {displayPosts.map((post: any) => (
             <Card key={post.id}>
               <CardContent className="pt-6 space-y-4">
                 <div className="flex justify-between items-start">
                   <div className="flex gap-3 items-center">
                     <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900 overflow-hidden flex items-center justify-center">
-                       {user?.avatarUrl ? (
-                         <img src={user.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+                       {displayUser?.avatarUrl ? (
+                         <img src={displayUser.avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
                        ) : (
-                         <span className="font-bold text-blue-600 dark:text-blue-400">{user?.name?.charAt(0) || 'U'}</span>
+                         <span className="font-bold text-blue-600 dark:text-blue-400">{displayUser?.name?.charAt(0) || 'U'}</span>
                        )}
                     </div>
                     <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white">{user?.name || 'User'}</h4>
+                      <h4 className="font-bold text-slate-900 dark:text-white">{displayUser?.name || 'User'}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
                         {new Date(post.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => deletePost(post.id)}
-                    className="text-slate-400 hover:text-rose-500 transition p-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  {isOwnProfile && (
+                     <button 
+                       onClick={() => deletePost(post.id)}
+                       className="text-slate-400 hover:text-rose-500 transition p-2"
+                     >
+                       <Trash2 className="w-4 h-4" />
+                     </button>
+                  )}
                 </div>
                 
                 {post.content && (
@@ -457,13 +515,13 @@ export function ProfileView() {
 
       {activeTab === 'photos' && (
         <div className="grid grid-cols-3 gap-1 sm:gap-2">
-          {posts?.filter(p => p.imageUrl).length === 0 ? (
+          {displayPosts?.filter((p: any) => p.imageUrl).length === 0 ? (
              <div className="col-span-3 text-center py-12 text-slate-500">
                <ImageIcon className="w-12 h-12 mx-auto mb-3 opacity-20" />
                <p>কোনো ফটো নেই</p>
              </div>
           ) : (
-            posts?.filter(p => p.imageUrl).map(post => (
+            displayPosts?.filter((p: any) => p.imageUrl).map((post: any) => (
               <div key={post.id} className="aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden relative cursor-pointer group">
                 <img src={post.imageUrl} alt="User Upload" className="w-full h-full object-cover group-hover:scale-105 transition duration-300" />
               </div>

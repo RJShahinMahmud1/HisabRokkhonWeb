@@ -8,7 +8,8 @@ import {
   LogOut, 
   User as UserIcon,
   PiggyBank,
-  BookOpen
+  BookOpen,
+  MessageCircle
 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { ViewState } from '../types';
@@ -35,6 +36,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
     profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
     settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
+    messages: lang === 'bn' ? 'মেসেজ' : 'Messages',
     accountant: lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
     logout: lang === 'bn' ? 'লগআউট' : 'Logout',
   };
@@ -49,11 +51,43 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     { id: 'reports', label: t.reports, icon: <PieChart size={18} /> },
     { id: 'profile', label: t.profile, icon: <UserIcon size={18} /> },
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
+    { id: 'messages', label: t.messages, icon: <MessageCircle size={18} /> },
   ];
+
+  // Fetch unread count globally
+  const [totalUnread, setTotalUnread] = React.useState(0);
+  React.useEffect(() => {
+    if (!user) return;
+    let unsub: (() => void) | null = null;
+    let isMounted = true;
+    
+    import('firebase/firestore').then(({ query, collection, where, onSnapshot }) => {
+        import('../lib/firebase').then(({ db }) => {
+            if (!isMounted) return;
+            unsub = onSnapshot(query(collection(db, 'conversations'), where('participants', 'array-contains', user.id)), (snapshot) => {
+                let unread = 0;
+                snapshot.docs.forEach(doc => {
+                    const data = doc.data();
+                    if(data.unreadCount && data.unreadCount[user.id] > 0) {
+                        unread += data.unreadCount[user.id];
+                    }
+                });
+                setTotalUnread(unread);
+            }, (error) => {
+                // Ignore silent permission errors on logout
+            });
+        });
+    });
+    
+    return () => {
+        isMounted = false;
+        if (unsub) unsub();
+    };
+  }, [user]);
 
   return (
     <div className={cn(
-      "flex h-screen w-full relative overflow-hidden font-sans transition-colors pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]",
+      "flex h-screen relative overflow-hidden font-sans transition-colors",
       isDark ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-800"
     )}>
       {/* Desktop Sidebar */}
@@ -78,7 +112,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
                 key={item.id}
                 onClick={() => onViewChange(item.id)}
                 className={cn(
-                  "flex items-center w-full px-3 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-colors",
+                  "flex items-center w-full px-3 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-colors relative",
                   currentView === item.id 
                     ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
                     : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -86,6 +120,11 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
               >
                 {item.icon}
                 <span className="ml-3">{item.label}</span>
+                {item.id === 'messages' && totalUnread > 0 && (
+                   <span className="absolute right-3 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
+                       {totalUnread > 99 ? '99+' : totalUnread}
+                   </span>
+                )}
               </button>
             ))}
           </nav>

@@ -49,20 +49,24 @@ service cloud.firestore {
     }
     
     match /publicProfiles/{userId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow write: if isSignedIn() && request.auth.uid == userId;
     }
     
-    match /global_messages/{messageId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn() &&
-                    incoming().keys().hasAll(['senderId', 'senderName', 'text', 'createdAt']) &&
-                    incoming().senderId == request.auth.uid &&
-                    incoming().text is string && incoming().text.size() > 0 && incoming().text.size() <= 1000 &&
-                    incoming().senderName is string &&
-                    (!incoming().keys().hasAny(['senderAvatarUrl']) || (incoming().senderAvatarUrl is string && incoming().senderAvatarUrl.size() <= 1048000)) &&
-                    incoming().createdAt == request.time;
-      allow update, delete: if false; // no edit/delete for simplicity
+    match /conversations/{conversationId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn() && request.auth.uid in incoming().participants && incoming().participants.size() == 2;
+      allow update: if isSignedIn() && request.auth.uid in resource.data.participants && request.auth.uid in incoming().participants;
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+        allow create: if isSignedIn() && 
+          request.auth.uid == incoming().senderId &&
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants &&
+          incoming().conversationId == conversationId;
+        allow update: if isSignedIn() && 
+          request.auth.uid in get(/databases/$(database)/documents/conversations/$(conversationId)).data.participants;
+      }
     }
   }
 }

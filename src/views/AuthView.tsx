@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { useAppStore } from '../store';
-import { signInWithGoogle, signUpWithEmail, loginWithEmail } from '../lib/firebase';
+import { signInWithGoogle, signUpWithEmail, loginWithEmail, db, auth } from '../lib/firebase';
 import { Loader2 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { checkUsernameUnique } from '../lib/chatService';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 export function AuthView() {
   const { isDark } = useAppStore();
   const [isLogin, setIsLogin] = useState(true);
   const [name, setName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,7 +27,57 @@ export function AuthView() {
       if (isLogin) {
         await loginWithEmail(email, password);
       } else {
-        await signUpWithEmail(email, password, name || 'User');
+        if (!username || username.trim().length < 3) {
+           setErrorMsg('ইউজারনেম কমপক্ষে ৩ অক্ষরের হতে হবে।');
+           setLoading(false);
+           return;
+        }
+        if (/[^a-zA-Z0-9_]/.test(username)) {
+           setErrorMsg('ইউজারনেমে শুধুমাত্র ইংরেজি অক্ষর, সংখ্যা এবং আন্ডারস্কোর (_) ব্যবহার করা যাবে।');
+           setLoading(false);
+           return;
+        }
+        
+        const isUnique = await checkUsernameUnique(username.trim()).catch(e => { 
+           console.error("Username check error", e);
+           throw new Error('সার্ভার এরর, একটু পরে আবার চেষ্টা করুন।'); 
+        });
+        if (!isUnique) {
+           setErrorMsg('এই ইউজারনেমটি আগে থেকেই ব্যবহারের জন্য নেওয়া হয়েছে। দয়া করে অন্য একটি ইউজারনেম দিন।');
+           setLoading(false);
+           return;
+        }
+
+        const lowerUsername = username.trim().toLowerCase();
+        
+        let result;
+        try {
+           result = await createUserWithEmailAndPassword(auth, email, password);
+        } catch(e: any) {
+           if (e.code === 'auth/email-already-in-use') throw new Error('এই ইমেইল দিয়ে আগে থেকেই একটি অ্যাকাউন্ট আছে!');
+           throw e;
+        }
+        
+        try {
+           await updateProfile(result.user, { displayName: name || 'User' });
+        } catch(e) {}
+        
+        try {
+           await setDoc(doc(db, 'publicProfiles', result.user.uid), {
+              uid: result.user.uid,
+              username: lowerUsername,
+              email: email,
+              name: name || 'User',
+              avatarUrl: '',
+              isOnline: true,
+              profileSetupCompleted: false,
+              updatedAt: serverTimestamp()
+           }, { merge: true });
+        } catch(e) {
+           console.error("Profile creation error", e);
+        }
+        
+        // Let store.tsx handle the rest through onAuthStateChanged
       }
     } catch (err: any) {
       setErrorMsg(err.message || 'কিছু একটা ভুল হয়েছে');
@@ -40,8 +94,6 @@ export function AuthView() {
     } catch (err: any) {
       if (err.code === 'auth/popup-closed-by-user' || err.code === 'auth/popup-blocked') {
         setErrorMsg('ব্রাউজার পপআপ ব্লক করেছে। দয়া করে পপআপ অ্যালাউ করুন অথবা "Open in New Tab" বাটনে ক্লিক করে নতুন ট্যাবে ট্রাই করুন।');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        setErrorMsg('Firebase Console-এ আপনার ডোমেইনটি যুক্ত নেই। Firebase -> Authentication -> Settings -> Authorized Domains-এ গিয়ে আপনার ওয়েবসাইটের লিংক যুক্ত করুন।');
       } else {
         setErrorMsg(err.message || 'কিছু একটা ভুল হয়েছে');
       }
@@ -84,17 +136,31 @@ export function AuthView() {
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div className="space-y-4">
               {!isLogin && (
-                <div>
-                  <label htmlFor="name" className="sr-only">নাম</label>
-                  <input
-                    id="name"
-                    type="text"
-                    required={!isLogin}
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
-                    placeholder="আপনার নাম"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="name" className="sr-only">নাম</label>
+                    <input
+                      id="name"
+                      type="text"
+                      required={!isLogin}
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
+                      placeholder="আপনার নাম"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="username" className="sr-only">ইউজারনেম</label>
+                    <input
+                      id="username"
+                      type="text"
+                      required={!isLogin}
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
+                      placeholder="ইউজারনেম (ইংরেজিতে, ৩+ অক্ষর)"
+                    />
+                  </div>
                 </div>
               )}
               <div>
