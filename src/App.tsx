@@ -48,7 +48,7 @@ function AppContent() {
       case 'reports': return <ReportsView />;
       case 'history': return <HistoryView />;
       case 'settings': return <SettingsView />;
-      case 'profile': return <ProfileView profileId={viewingProfileId} onBack={() => { setViewingProfileId(null); setCurrentView('messages'); }} />;
+      case 'profile': return <ProfileView profileId={viewingProfileId} onViewProfile={handleViewProfile} onBack={() => { setViewingProfileId(null); setCurrentView('messages'); }} />;
       case 'messages': return <MessengerView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
       default: return <DashboardView onChangeView={setCurrentView} />;
     }

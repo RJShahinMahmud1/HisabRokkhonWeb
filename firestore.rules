@@ -50,7 +50,7 @@ service cloud.firestore {
     
     match /publicProfiles/{userId} {
       allow read: if true;
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      allow write: if isSignedIn();
     }
     
     match /conversations/{conversationId} {

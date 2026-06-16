@@ -29,6 +29,7 @@ export interface Conversation {
   typingUsers: Record<string, boolean>;
   createdAt: any;
   updatedAt: any;
+  deletedFor?: string[];
 }
 
 export interface Message {
@@ -38,6 +39,11 @@ export interface Message {
   text: string;
   status: 'sent' | 'delivered' | 'seen';
   createdAt: any;
+  isEdited?: boolean;
+  editedAt?: any;
+  isDeletedForEveryone?: boolean;
+  deletedFor?: string[];
+  reactions?: Record<string, string>;
 }
 
 export const subscribeToConversations = (userId: string, callback: (convs: Conversation[]) => void) => {
@@ -146,16 +152,21 @@ export const sendMessage = async (conversationId: string, senderId: string, othe
   const convRef = doc(db, 'conversations', conversationId);
   const convSnap = await getDoc(convRef);
   let otherUnread = 0;
+  let currentDeletedFor: string[] = [];
   if(convSnap.exists()){
       const d = convSnap.data() as Conversation;
       otherUnread = (d.unreadCount && d.unreadCount[otherUserId]) || 0;
+      currentDeletedFor = d.deletedFor || [];
   }
   
+  const updatedDeletedFor = currentDeletedFor.filter(id => id !== senderId && id !== otherUserId);
+
   await updateDoc(convRef, {
     lastMessageText: text,
     lastMessageSenderId: senderId,
     lastMessageTime: serverTimestamp(),
     [`unreadCount.${otherUserId}`]: otherUnread + 1,
+    deletedFor: updatedDeletedFor,
     updatedAt: serverTimestamp()
   });
 };
@@ -196,4 +207,48 @@ export const updateUserPresence = async (userId: string, isOnline: boolean) => {
             lastSeen: serverTimestamp()
         }, { merge: true });
     } catch(e){}
+};
+
+export const editMessage = async (conversationId: string, messageId: string, text: string) => {
+  await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
+    text,
+    isEdited: true,
+    editedAt: serverTimestamp(),
+  });
+};
+
+export const deleteMessageForEveryone = async (conversationId: string, messageId: string) => {
+  await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
+    text: 'এই মেসেজটি ডিলিট করা হয়েছে',
+    isDeletedForEveryone: true,
+  });
+};
+
+export const deleteMessageForMe = async (conversationId: string, messageId: string, userId: string, message: Message) => {
+  const currentDeletedFor = message.deletedFor || [];
+  await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
+    deletedFor: [...currentDeletedFor, userId],
+  });
+};
+
+export const toggleMessageReaction = async (conversationId: string, messageId: string, userId: string, emoji: string, currentReactions: Record<string, string> = {}) => {
+  const newReactions = { ...currentReactions };
+  if (newReactions[userId] === emoji) {
+    delete newReactions[userId];
+  } else {
+    newReactions[userId] = emoji;
+  }
+  
+  await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
+    reactions: newReactions
+  });
+};
+
+export const deleteConversationHistory = async (conversationId: string, userId: string, conv: Conversation) => {
+  const currentDeletedFor = conv.deletedFor || [];
+  if (!currentDeletedFor.includes(userId)) {
+      await updateDoc(doc(db, 'conversations', conversationId), {
+        deletedFor: [...currentDeletedFor, userId]
+      });
+  }
 };

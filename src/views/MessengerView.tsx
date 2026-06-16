@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -10,6 +10,11 @@ import {
   markMessagesAsSeen, 
   setTypingStatus, 
   updateUserPresence,
+  editMessage,
+  deleteMessageForEveryone,
+  deleteMessageForMe,
+  deleteConversationHistory,
+  toggleMessageReaction,
   Conversation,
   Message,
   PublicProfile
@@ -29,6 +34,10 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const [text, setText] = useState('');
   const [activeTab, setActiveTab] = useState<'chats' | 'users'>('chats');
   
+  const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
+  const [showConvOptions, setShowConvOptions] = useState(false);
+  const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
@@ -160,6 +169,59 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const otherUserId = activeConv?.participants.find(p => p !== user?.id);
   const otherProfile = otherUserId ? profiles[otherUserId] : null;
 
+  const cancelEdit = () => {
+      setEditingMsgId(null);
+      setText('');
+  };
+
+  const handleEditClick = (msg: Message) => {
+      setEditingMsgId(msg.id);
+      setText(msg.text);
+      setMessageMenuId(null);
+  };
+
+  const handleDeleteForMe = async (msg: Message) => {
+      if(!user || !activeConvId) return;
+      await deleteMessageForMe(activeConvId, msg.id, user.id, msg);
+      setMessageMenuId(null);
+  };
+
+  const handleDeleteForEveryone = async (msg: Message) => {
+      if(!activeConvId) return;
+      await deleteMessageForEveryone(activeConvId, msg.id);
+      setMessageMenuId(null);
+  };
+
+  const handleReaction = async (msg: Message, emoji: string) => {
+      if(!user || !activeConvId) return;
+      await toggleMessageReaction(activeConvId, msg.id, user.id, emoji, msg.reactions);
+      setMessageMenuId(null);
+  };
+
+  const handleDeleteConvHistory = async () => {
+      if(!user || !activeConvId || !activeConv) return;
+      if (confirm('আপনি কি এই চ্যাট হিস্ট্রি ডিলিট করতে চান?')) {
+          await deleteConversationHistory(activeConvId, user.id, activeConv);
+          setActiveConvId(null);
+          setShowConvOptions(false);
+      }
+  };
+
+  const checkCanEdit = (msg: Message) => {
+      if (msg.senderId !== user?.id) return false;
+      if (msg.isDeletedForEveryone) return false;
+      
+      const msgTime = msg.createdAt?.toMillis ? msg.createdAt.toMillis() : Date.now();
+      const now = Date.now();
+      const diffMins = (now - msgTime) / (1000 * 60);
+      
+      if (msg.status === 'seen') {
+          return diffMins <= 5;
+      } else {
+          return diffMins <= 15;
+      }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!text.trim() || !activeConvId || !user || !otherUserId) return;
@@ -171,7 +233,12 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
     setTypingStatus(activeConvId, user.id, false);
     setIsTyping(false);
     
-    await sendMessage(activeConvId, user.id, otherUserId, msgText);
+    if (editingMsgId) {
+       await editMessage(activeConvId, editingMsgId, msgText);
+       setEditingMsgId(null);
+    } else {
+       await sendMessage(activeConvId, user.id, otherUserId, msgText);
+    }
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -246,7 +313,7 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                 </div>
             ) : (
                 <div className="px-2 space-y-1">
-                    {conversations.map(c => {
+                    {conversations.filter(c => !user?.id || !c.deletedFor?.includes(user.id)).map(c => {
                         const otherPid = c.participants.find(p => p !== user?.id);
                         const profile = otherPid ? profiles[otherPid] : null;
                         const unread = (user?.id && c.unreadCount?.[user.id] > 0) ? c.unreadCount[user.id] : 0;
@@ -318,13 +385,27 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                             </div>
                         </div>
                     </div>
+                    <div className="relative">
+                        <button onClick={() => setShowConvOptions(!showConvOptions)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-500">
+                           <MoreVertical className="w-5 h-5" />
+                        </button>
+                        {showConvOptions && (
+                            <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-slate-100 dark:border-slate-800 py-1 z-50">
+                                <button onClick={handleDeleteConvHistory} className="w-full text-left px-4 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete chat history
+                                </button>
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* Messages Area */}
-                <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-[#0f172a]' : 'bg-[#F0F2F5]'}`}>
-                    {messages.map((msg, idx) => {
+                <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-[#0f172a]' : 'bg-[#F0F2F5]'}`} onClick={() => setMessageMenuId(null)}>
+                    {messages.filter(msg => !user || !msg.deletedFor?.includes(user.id)).map((msg, idx, arr) => {
                         const isMe = msg.senderId === user?.id;
-                        const showAvatar = !isMe && (idx === messages.length - 1 || messages[idx + 1]?.senderId !== msg.senderId);
+                        const showAvatar = !isMe && (idx === arr.length - 1 || arr[idx + 1]?.senderId !== msg.senderId);
+                        const canEdit = checkCanEdit(msg);
                         
                         return (
                             <div key={msg.id} className={`flex gap-2 w-full ${isMe ? 'justify-end' : 'justify-start'}`}>
@@ -337,16 +418,63 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                                         )}
                                     </div>
                                 )}
-                                <div className={`flex flex-col max-w-[70%] lg:max-w-[60%] ${isMe ? 'items-end' : 'items-start'}`}>
-                                    <div className={`px-4 py-2.5 shadow-sm text-[15px] ${isMe ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : (isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900') + ' rounded-2xl rounded-bl-sm border border-slate-100 dark:border-slate-700'}`}>
-                                        <p className="break-words">{msg.text}</p>
+                                <div className={`flex flex-col relative max-w-[70%] lg:max-w-[60%] ${isMe ? 'items-end' : 'items-start'}`}>
+                                    <div className={`group flex items-center gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                                        <div className={`px-4 py-2.5 shadow-sm text-[15px] ${msg.isDeletedForEveryone ? 'italic opacity-60 ' : ''}${isMe ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : (isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900') + ' rounded-2xl rounded-bl-sm border border-slate-100 dark:border-slate-700'}`}>
+                                            <p className="break-words">{msg.text}</p>
+                                        </div>
+                                        <div className="relative opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                            <button onClick={(e) => { e.stopPropagation(); setMessageMenuId(messageMenuId === msg.id ? null : msg.id); }} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500">
+                                                <MoreHorizontal className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                        {messageMenuId === msg.id && (
+                                            <div onClick={(e) => e.stopPropagation()} className={`absolute z-20 top-full ${isMe ? 'right-0' : 'left-0'} mt-1 w-48 bg-white dark:bg-slate-900 shadow-xl rounded-xl border border-slate-100 dark:border-slate-800 py-1`}>
+                                                <div className="flex justify-around p-2 border-b border-slate-100 dark:border-slate-800 mb-1">
+                                                    {['👍','❤️','😂','😲','😢','🙏'].map(emoji => (
+                                                        <button key={emoji} onClick={() => handleReaction(msg, emoji)} className="hover:scale-125 transition">
+                                                            {emoji}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                {canEdit && (
+                                                    <button onClick={() => handleEditClick(msg)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                                                        <Edit3 className="w-4 h-4" /> Edit Message
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleDeleteForMe(msg)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                                                    <Trash2 className="w-4 h-4" /> Delete for me
+                                                </button>
+                                                {isMe && !msg.isDeletedForEveryone && (
+                                                    <button onClick={() => handleDeleteForEveryone(msg)} className="w-full text-left px-4 py-2 text-sm text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                                                        <Trash2 className="w-4 h-4" /> Delete for everyone
+                                                    </button>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
+                                    
+                                    {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                                        <div className={`mt-1 flex -space-x-1 `}>
+                                            <div className="bg-white dark:bg-slate-800 rounded-full px-1.5 py-0.5 text-xs shadow border border-slate-100 dark:border-slate-700 border-2">
+                                                {Array.from(new Set(Object.values(msg.reactions))).join('')}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {isMe && (
                                         <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
                                             {formatTime(msg.createdAt)}
-                                            {msg.status === 'sent' && <Check className="w-3 h-3" />}
-                                            {msg.status === 'delivered' && <CheckCheck className="w-3 h-3 text-slate-400" />}
-                                            {msg.status === 'seen' && <CheckCheck className="w-3 h-3 text-blue-500" />}
+                                            {msg.isEdited && <span className="italic ml-1">(edited)</span>}
+                                            {msg.status === 'sent' && <Check className="w-3 h-3 ml-1" />}
+                                            {msg.status === 'delivered' && <CheckCheck className="w-3 h-3 text-slate-400 ml-1" />}
+                                            {msg.status === 'seen' && <CheckCheck className="w-3 h-3 text-blue-500 ml-1" />}
+                                        </div>
+                                    )}
+                                    {!isMe && (
+                                        <div className="flex items-center gap-1 mt-1 text-[10px] text-slate-500">
+                                            {formatTime(msg.createdAt)}
+                                            {msg.isEdited && <span className="italic ml-1">(edited)</span>}
                                         </div>
                                     )}
                                 </div>
@@ -358,6 +486,16 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
 
                 {/* Input Area */}
                 <div className={`p-4 border-t ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'}`}>
+                    {editingMsgId && (
+                        <div className="flex items-center justify-between bg-slate-100 dark:bg-slate-800 rounded-lg px-4 py-2 mb-2">
+                            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+                                <Edit3 className="w-4 h-4" /> Editing message
+                            </div>
+                            <button onClick={cancelEdit} className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                     <form onSubmit={handleSend} className="flex items-center gap-2">
                         <input
                             type="text"

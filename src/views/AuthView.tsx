@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { signInWithGoogle, signUpWithEmail, loginWithEmail, db, auth } from '../lib/firebase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { checkUsernameUnique } from '../lib/chatService';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -16,6 +16,37 @@ export function AuthView() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'unavailable' | 'error'>('idle');
+
+  useEffect(() => {
+    if (isLogin) {
+      setUsernameStatus('idle');
+      return;
+    }
+    
+    if (username.trim().length < 3) {
+      setUsernameStatus('idle');
+      return;
+    }
+
+    if (/[^a-zA-Z0-9_]/.test(username)) {
+      setUsernameStatus('error');
+      return;
+    }
+
+    const checkTimeout = setTimeout(async () => {
+      setUsernameStatus('checking');
+      try {
+        const isUnique = await checkUsernameUnique(username.trim());
+        setUsernameStatus(isUnique ? 'available' : 'unavailable');
+      } catch (e) {
+        setUsernameStatus('error');
+      }
+    }, 500);
+
+    return () => clearTimeout(checkTimeout);
+  }, [username, isLogin]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,6 +69,12 @@ export function AuthView() {
            return;
         }
         
+        if (usernameStatus === 'unavailable') {
+           setErrorMsg('এই ইউজারনেমটি আগে থেকেই ব্যবহারের জন্য নেওয়া হয়েছে। দয়া করে অন্য একটি ইউজারনেম দিন।');
+           setLoading(false);
+           return;
+        }
+
         const isUnique = await checkUsernameUnique(username.trim()).catch(e => { 
            console.error("Username check error", e);
            throw new Error('সার্ভার এরর, একটু পরে আবার চেষ্টা করুন।'); 
@@ -151,15 +188,37 @@ export function AuthView() {
                   </div>
                   <div>
                     <label htmlFor="username" className="sr-only">ইউজারনেম</label>
-                    <input
-                      id="username"
-                      type="text"
-                      required={!isLogin}
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 outline-none sm:text-sm"
-                      placeholder="ইউজারনেম (ইংরেজিতে, ৩+ অক্ষর)"
-                    />
+                    <div className="relative">
+                      <input
+                        id="username"
+                        type="text"
+                        required={!isLogin}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        className={`appearance-none block w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-white dark:bg-slate-900 rounded-2xl border ${
+                          usernameStatus === 'available' ? 'border-green-500 focus:ring-green-500/50' :
+                          usernameStatus === 'unavailable' || usernameStatus === 'error' ? 'border-rose-500 focus:ring-rose-500/50' :
+                          'border-slate-200 dark:border-slate-700 focus:ring-blue-500/50'
+                        } placeholder-slate-500 text-slate-900 dark:text-white focus:outline-none focus:ring-2 outline-none sm:text-sm`}
+                        placeholder="ইউজারনেম (ইংরেজিতে, ৩+ অক্ষর)"
+                      />
+                      {usernameStatus !== 'idle' && (
+                        <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                          {usernameStatus === 'checking' && <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />}
+                          {usernameStatus === 'available' && <CheckCircle className="h-5 w-5 text-green-500" />}
+                          {(usernameStatus === 'unavailable' || usernameStatus === 'error') && <XCircle className="h-5 w-5 text-rose-500" />}
+                        </div>
+                      )}
+                    </div>
+                    {usernameStatus === 'available' && (
+                      <p className="mt-1 text-xs text-green-600 dark:text-green-400 pl-1">এই ইউজারনেমটি এভেইলেবল (Available)।</p>
+                    )}
+                    {usernameStatus === 'unavailable' && (
+                      <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 pl-1">এই ইউজারনেমটি আগে থেকেই ব্যবহৃত।</p>
+                    )}
+                    {usernameStatus === 'error' && (
+                      <p className="mt-1 text-xs text-rose-600 dark:text-rose-400 pl-1">অবৈধ ইউজারনেম।</p>
+                    )}
                   </div>
                 </div>
               )}

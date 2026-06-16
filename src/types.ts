@@ -70,6 +70,16 @@ export interface User {
   hobbies?: string;
   dob?: string;
   profileSetupCompleted?: boolean;
+  followersCount?: string[];
+  followingCount?: string[];
+}
+
+export interface PostComment {
+  id: string;
+  userId: string;
+  text: string;
+  createdAt: string;
+  replies?: PostComment[];
 }
 
 export interface Post {
@@ -77,4 +87,6 @@ export interface Post {
   content: string;
   imageUrl?: string;
   createdAt: string;
+  reactions?: Record<string, string>; // userId -> emoji
+  comments?: PostComment[];
 }

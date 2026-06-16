@@ -1,33 +1,40 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft } from 'lucide-react';
+import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft, Heart, MessageCircle, UserPlus, UserMinus, MessageSquare } from 'lucide-react';
 import { updateUserPassword, db } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { ProfileSetupWizard } from '../components/ProfileSetupWizard';
 import { PublicProfile } from '../lib/chatService';
+import { toggleReaction, addComment, toggleFollow } from '../lib/socialService';
+import { UserListModal } from '../components/UserListModal';
 
-export function ProfileView({ profileId, onBack }: { profileId?: string | null, onBack?: () => void }) {
+export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: string | null, onBack?: () => void, onViewProfile?: (uid: string) => void }) {
   const { user, updateProfile, logout, importState, addPost, deletePost, posts } = useAppStore();
 
   const isOwnProfile = !profileId || profileId === user?.id;
 
   const [publicUser, setPublicUser] = useState<any>(null);
-  const [loadingPublic, setLoadingPublic] = useState(!isOwnProfile);
+  const [loadingPublic, setLoadingPublic] = useState(true);
+
+  const activeProfileId = profileId || user?.id;
 
   useEffect(() => {
-    if (!isOwnProfile && profileId) {
-       getDoc(doc(db, 'publicProfiles', profileId)).then(snap => {
+    if (activeProfileId) {
+       const unsubscribe = onSnapshot(doc(db, 'publicProfiles', activeProfileId), (snap) => {
            if (snap.exists()) {
-               setPublicUser(snap.data());
+               setPublicUser({ ...snap.data(), id: snap.id });
+           } else {
+               setPublicUser(null);
            }
            setLoadingPublic(false);
        });
+       return () => unsubscribe();
     }
-  }, [profileId, isOwnProfile]);
+  }, [activeProfileId]);
 
-  const displayUser = isOwnProfile ? user : publicUser;
-  const displayPosts = isOwnProfile ? posts : (publicUser?.posts || []);
+  const displayUser = isOwnProfile ? { ...user, ...publicUser } : publicUser;
+  const displayPosts = publicUser?.posts || (isOwnProfile ? posts : []);
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
@@ -42,6 +49,30 @@ export function ProfileView({ profileId, onBack }: { profileId?: string | null, 
   const [following, setFollowing] = useState(user?.following || 486);
   
   const [activeTab, setActiveTab] = useState<'posts' | 'about' | 'photos'>('posts');
+  const [showFollowersModal, setShowFollowersModal] = useState(false);
+  const [showFollowingModal, setShowFollowingModal] = useState(false);
+  
+  const [commentText, setCommentText] = useState<Record<string, string>>({});
+  const [showCommentsFor, setShowCommentsFor] = useState<Record<string, boolean>>({});
+
+  const handleToggleLike = async (postId: string) => {
+    if (!user || !activeProfileId) return;
+    await toggleReaction(activeProfileId, postId, user.id, '❤️');
+  };
+
+  const handlePostComment = async (postId: string) => {
+    if (!user || !activeProfileId) return;
+    const text = commentText[postId]?.trim();
+    if (!text) return;
+    await addComment(activeProfileId, postId, user.id, text);
+    setCommentText(prev => ({ ...prev, [postId]: '' }));
+  };
+
+  const handleToggleFollow = async () => {
+     if (!user || !displayUser?.id) return;
+     const isFollowing = displayUser.followersCount?.includes(user.id);
+     await toggleFollow(user.id, displayUser.id, isFollowing);
+  };
   
   const [showEditModal, setShowEditModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -229,7 +260,7 @@ export function ProfileView({ profileId, onBack }: { profileId?: string | null, 
     e.target.value = '';
   };
 
-  if (isOwnProfile && user?.profileSetupCompleted === false) {
+  if (isOwnProfile && (!user || !user.profileSetupCompleted)) {
       return <ProfileSetupWizard onComplete={() => {}} />;
   }
 
@@ -293,9 +324,19 @@ export function ProfileView({ profileId, onBack }: { profileId?: string | null, 
             {displayUser?.username && <p className="text-sm font-medium text-slate-500">@{displayUser.username}</p>}
             {displayUser?.designation && <p className="text-sm text-slate-600 dark:text-slate-400 font-medium">{displayUser.designation}</p>}
             <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400 font-medium mt-1">
-              <span>{displayUser?.followers || 0} followers</span>
+              <button 
+                onClick={() => displayUser?.followersCount?.length > 0 && setShowFollowersModal(true)} 
+                className="hover:text-slate-900 dark:hover:text-slate-200 transition"
+              >
+                {displayUser?.followersCount?.length || 0} followers
+              </button>
               <span>•</span>
-              <span>{displayUser?.following || 0} following</span>
+              <button 
+                onClick={() => displayUser?.followingCount?.length > 0 && setShowFollowingModal(true)} 
+                className="hover:text-slate-900 dark:hover:text-slate-200 transition"
+              >
+                {displayUser?.followingCount?.length || 0} following
+              </button>
             </div>
           </div>
           
@@ -320,7 +361,9 @@ export function ProfileView({ profileId, onBack }: { profileId?: string | null, 
                  </>
              ) : (
                  <>
-                    <button className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition shadow-sm">ফোলো করুন</button>
+                    <button onClick={handleToggleFollow} className={`flex-1 py-2 rounded-lg font-semibold transition shadow-sm ${displayUser?.followersCount?.includes(user?.id) ? 'bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white' : 'bg-blue-600 hover:bg-blue-700 text-white'}`}>
+                       {displayUser?.followersCount?.includes(user?.id) ? 'আনফোলো করুন' : 'ফোলো করুন'}
+                    </button>
                     <button onClick={onBack} className="flex-1 py-2 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-lg font-semibold transition">মেসেজ দিন</button>
                  </>
              )}
@@ -505,6 +548,66 @@ export function ProfileView({ profileId, onBack }: { profileId?: string | null, 
                     <img src={post.imageUrl} alt="Post" className="w-full h-auto max-h-96 object-cover" />
                   </div>
                 )}
+                
+                {/* Interactions */}
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
+                    {post.reactions && Object.keys(post.reactions).length > 0 && (
+                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3 px-2">
+                            <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shadow-sm text-xs border border-white dark:border-slate-700">❤️</span>
+                            <span>{Object.keys(post.reactions).length}</span>
+                        </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                        <button 
+                            onClick={() => handleToggleLike(post.id)}
+                            className={`flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold ${user && post.reactions?.[user.id] ? 'text-rose-500 bg-rose-50 dark:bg-rose-500/10' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                        >
+                            <Heart className={`w-5 h-5 ${user && post.reactions?.[user.id] ? 'fill-current' : ''}`} />
+                            <span>Like</span>
+                        </button>
+                        <button 
+                            onClick={() => setShowCommentsFor(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                            className="flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                        >
+                            <MessageSquare className="w-5 h-5" />
+                            <span>Comment {post.comments?.length ? `(${post.comments.length})` : ''}</span>
+                        </button>
+                    </div>
+
+                    {showCommentsFor[post.id] && (
+                        <div className="mt-4 space-y-3">
+                            <div className="flex gap-2">
+                                <input 
+                                   type="text"
+                                   placeholder="মন্তব্য লিখুন..."
+                                   value={commentText[post.id] || ''}
+                                   onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
+                                   className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 border-none outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white text-sm"
+                                />
+                                <button
+                                   onClick={() => handlePostComment(post.id)}
+                                   disabled={!commentText[post.id]?.trim()}
+                                   className="bg-blue-600 text-white p-2.5 rounded-xl disabled:opacity-50"
+                                >
+                                   <Send className="w-4 h-4" />
+                                </button>
+                            </div>
+                            
+                            {post.comments && post.comments.length > 0 && (
+                                <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                                    {post.comments.map((comment: any) => (
+                                        <div key={comment.id} className="flex gap-2 text-sm">
+                                            <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-2">
+                                                <span className="font-semibold block text-slate-900 dark:text-white text-[13px] mb-0.5">{comment.userId === user?.id ? (user?.name) : 'User'}</span>
+                                                <p className="text-slate-700 dark:text-slate-300">{comment.text}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -530,38 +633,67 @@ export function ProfileView({ profileId, onBack }: { profileId?: string | null, 
         </div>
       )}
 
-      {/* Existing Settings Section Header */}
-      <div className="flex items-center justify-between pt-8 mb-4 border-t border-slate-200 dark:border-slate-700">
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">প্রোফাইল সেটিংস</h3>
-        <div className="flex gap-2">
-          <button onClick={() => setShowBackupModal(true)} className="flex items-center justify-center p-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="ডাটা ব্যাকআপ ও রিস্টোর">
-            <Database className="w-5 h-5" />
-          </button>
-          <button onClick={handleShare} className="flex items-center gap-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
-            <Share2 className="w-4 h-4" />
-            <span>শেয়ার</span>
-          </button>
-        </div>
-      </div>
+      {isOwnProfile && (
+        <>
+          {/* Existing Settings Section Header */}
+          <div className="flex items-center justify-between pt-8 mb-4 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white">প্রোফাইল সেটিংস</h3>
+            <div className="flex gap-2">
+              <button onClick={() => setShowBackupModal(true)} className="flex items-center justify-center p-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-lg font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition" title="ডাটা ব্যাকআপ ও রিস্টোর">
+                <Database className="w-5 h-5" />
+              </button>
+              <button onClick={handleShare} className="flex items-center gap-2 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 px-3 py-1.5 rounded-lg text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                <Share2 className="w-4 h-4" />
+                <span>শেয়ার</span>
+              </button>
+            </div>
+          </div>
 
-      <div className="flex flex-col gap-3">
-        <button 
-          onClick={() => setShowPasswordModal(true)}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-        >
-          <Key className="w-5 h-5" />
-          পাসওয়ার্ড পরিবর্তন করুন
-        </button>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 rounded-2xl font-bold hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+            >
+              <Key className="w-5 h-5" />
+              পাসওয়ার্ড পরিবর্তন করুন
+            </button>
 
-        <button 
-          onClick={logout}
-          className="w-full flex items-center justify-center gap-2 py-3 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 rounded-2xl font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition border border-rose-100 dark:border-rose-900/50"
-        >
-          <LogOut className="w-5 h-5" />
-          লগআউট করুন
-        </button>
-      </div>
+            <button 
+              onClick={logout}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 rounded-2xl font-bold hover:bg-rose-100 dark:hover:bg-rose-900/40 transition border border-rose-100 dark:border-rose-900/50"
+            >
+              <LogOut className="w-5 h-5" />
+              লগআউট করুন
+            </button>
+          </div>
+        </>
+      )}
 
+      {/* Follow / Following Modals */}
+      {showFollowersModal && (
+        <UserListModal 
+          userIds={displayUser?.followersCount || []}
+          title="Followers"
+          onClose={() => setShowFollowersModal(false)}
+          onUserClick={(uid) => {
+             setShowFollowersModal(false);
+             onViewProfile?.(uid);
+          }}
+        />
+      )}
+      
+      {showFollowingModal && (
+        <UserListModal 
+          userIds={displayUser?.followingCount || []}
+          title="Following"
+          onClose={() => setShowFollowingModal(false)}
+          onUserClick={(uid) => {
+             setShowFollowingModal(false);
+             onViewProfile?.(uid);
+          }}
+        />
+      )}
+      
       {/* Edit Profile Modal */}
       {showEditModal && (
         <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:items-center sm:justify-center bg-slate-900/40 backdrop-blur-sm sm:p-4">

@@ -117,10 +117,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const loadFromFirebase = async (userId: string) => {
     try {
       let currentUsername = undefined;
+      let currentSetupStatus = false;
       try {
         const profileSnap = await getDoc(doc(db, 'publicProfiles', userId));
         if (profileSnap.exists()) {
           currentUsername = profileSnap.data().username;
+          if (profileSnap.data().profileSetupCompleted !== undefined) {
+             currentSetupStatus = profileSnap.data().profileSetupCompleted;
+          }
         }
       } catch(e) {}
 
@@ -147,7 +151,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
              education: remoteState.user?.education || '',
              hobbies: remoteState.user?.hobbies || '',
              dob: remoteState.user?.dob || '',
-             profileSetupCompleted: remoteState.user?.profileSetupCompleted || false,
+             profileSetupCompleted: remoteState.user?.profileSetupCompleted ?? currentSetupStatus ?? false,
              followers: remoteState.user?.followers || 0,
              following: remoteState.user?.following || 0,
              posts: remoteState.posts || [],
@@ -162,6 +166,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   ...(remoteState.user || {}),
                   name: nextName, 
                   avatarUrl: nextAvatar,
+                  profileSetupCompleted: remoteState.user?.profileSetupCompleted ?? currentSetupStatus,
                   username: currentUsername || remoteState.user?.username
               } : s.user 
             };
@@ -180,11 +185,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
          email: auth.currentUser?.email || '',
          name: fallbackName,
          avatarUrl: fallbackAvatar,
+         profileSetupCompleted: currentSetupStatus,
          updatedAt: serverTimestamp()
       }, { merge: true }).catch(console.error);
       
       setState(s => {
-         const ns = { ...s, user: s.user ? { ...s.user, username: currentUsername } : s.user };
+         const ns = { ...s, user: s.user ? { ...s.user, username: currentUsername, profileSetupCompleted: currentSetupStatus } : s.user };
          isInitialLoad.current = false;
          return ns;
       });
@@ -209,13 +215,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
              userId: state.user!.id,
              stateStr: JSON.stringify(stateToSave),
              updatedAt: serverTimestamp()
-           }, { merge: true });
-           
-           // Keep posts sync
-           const ppRef = doc(db, 'publicProfiles', state.user!.id);
-           await setDoc(ppRef, {
-              posts: stateToSave.posts || [],
-              updatedAt: serverTimestamp()
            }, { merge: true });
          } catch (error) {
            handleFirestoreError(error, OperationType.WRITE, `userStates/${state.user!.id}`);
@@ -274,7 +273,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               profileSetupCompleted: updates.profileSetupCompleted ?? state.user.profileSetupCompleted ?? false,
               followers: updates.followers ?? state.user.followers ?? 0,
               following: updates.following ?? state.user.following ?? 0,
-              posts: state.posts || [],
               updatedAt: serverTimestamp()
             }, { merge: true }).catch(e => console.error("Could not sync public profile", e));
           }
@@ -286,18 +284,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const addPost = (p: Omit<Post, 'id'>) => {
+  const addPost = async (p: Omit<Post, 'id'>) => {
+    const newPost = { ...p, id: uuidv4() };
     setState((s) => ({
       ...s,
-      posts: [{ ...p, id: uuidv4() }, ...(s.posts || [])],
+      posts: [newPost, ...(s.posts || [])],
     }));
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+        const ppRef = doc(db, 'publicProfiles', currentUser.uid);
+        const ppSnap = await getDoc(ppRef);
+        if (ppSnap.exists()) {
+             const existingPosts = ppSnap.data().posts || [];
+             await setDoc(ppRef, { posts: [newPost, ...existingPosts] }, { merge: true });
+        } else {
+             await setDoc(ppRef, { posts: [newPost] }, { merge: true });
+        }
+    }
   };
 
-  const deletePost = (id: string) => {
+  const deletePost = async (id: string) => {
     setState((s) => ({
       ...s,
       posts: (s.posts || []).filter((post) => post.id !== id),
     }));
+    const currentUser = auth.currentUser;
+    if (currentUser) {
+        const ppRef = doc(db, 'publicProfiles', currentUser.uid);
+        const ppSnap = await getDoc(ppRef);
+        if (ppSnap.exists()) {
+            const existingPosts = ppSnap.data().posts || [];
+            await setDoc(ppRef, { posts: existingPosts.filter((post: Post) => post.id !== id) }, { merge: true });
+        }
+    }
   };
 
   const addTransaction = (t: Omit<Transaction, 'id'>) => {
