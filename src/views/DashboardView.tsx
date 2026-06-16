@@ -11,40 +11,6 @@ import { ViewState } from '../types';
 export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState) => void }) {
   const { user, transactions, categories, setHistorySearchTerm, isDark, toggleTheme, lang, setLang, loans, savingsGoals } = useAppStore();
   
-  const [showAd, setShowAd] = useState(false);
-  const [adCountdown, setAdCountdown] = useState(10);
-
-  React.useEffect(() => {
-    const lastAdTime = localStorage.getItem('last_ad_time');
-    const now = Date.now();
-    
-    // 30 minutes = 1800000 ms
-    if (!lastAdTime || (now - parseInt(lastAdTime, 10)) > 1800000) {
-      setShowAd(true);
-      setAdCountdown(10);
-    }
-  }, []);
-
-  React.useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (showAd && adCountdown > 0) {
-      timer = setTimeout(() => setAdCountdown(c => c - 1), 1000);
-    }
-    return () => clearTimeout(timer);
-  }, [showAd, adCountdown]);
-
-  const handleOpenAd = () => {
-    localStorage.setItem('last_ad_time', Date.now().toString());
-    setShowAd(false);
-    window.open('https://www.effectivecpmnetwork.com/bwwj8fzhx?key=cc27155663e2cb1e243eac0721a33944', '_blank');
-  };
-
-  const handleCloseAd = () => {
-    if (adCountdown > 0) return;
-    localStorage.setItem('last_ad_time', Date.now().toString());
-    setShowAd(false);
-  };
-
   const totalIncome = transactions
     .filter((t) => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
@@ -312,37 +278,6 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           <span className="text-[#EF4444] text-base font-bold">৳</span> OUT
         </button>
       </div>
-
-      {showAd && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="p-6 text-center space-y-4">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-2">
-                <Globe size={32} strokeWidth={2} />
-              </div>
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">স্পেশাল অফার!</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">
-                আপনার জন্য একটি নতুন অফার রয়েছে। বিস্তারিত জানতে নিচে ক্লিক করুন।
-              </p>
-              <div className="pt-4 flex flex-col gap-3">
-                <button 
-                  onClick={handleOpenAd}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors"
-                >
-                  অফারটি দেখুন
-                </button>
-                <button 
-                  onClick={handleCloseAd}
-                  disabled={adCountdown > 0}
-                  className="w-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {adCountdown > 0 ? `অফারটি দেখবো না (${adCountdown}s)` : 'অফারটি দেখবো না'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

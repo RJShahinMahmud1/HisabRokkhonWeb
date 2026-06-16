@@ -53,6 +53,10 @@ service cloud.firestore {
       allow write: if isSignedIn();
     }
     
+    match /reports/{reportId} {
+      allow read, write: if isSignedIn();
+    }
+    
     match /conversations/{conversationId} {
       allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
       allow create: if isSignedIn() && request.auth.uid in incoming().participants && incoming().participants.size() == 2;

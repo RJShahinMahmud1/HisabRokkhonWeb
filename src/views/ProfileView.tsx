@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft, Heart, MessageCircle, UserPlus, UserMinus, MessageSquare } from 'lucide-react';
+import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft, Heart, MessageCircle, UserPlus, UserMinus, MessageSquare, Flag } from 'lucide-react';
 import { updateUserPassword, db } from '../lib/firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { ProfileSetupWizard } from '../components/ProfileSetupWizard';
 import { PublicProfile } from '../lib/chatService';
 import { toggleReaction, addComment, toggleFollow } from '../lib/socialService';
+import { reportPost } from '../lib/adminService';
 import { UserListModal } from '../components/UserListModal';
 
 export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: string | null, onBack?: () => void, onViewProfile?: (uid: string) => void }) {
@@ -72,6 +73,19 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
      if (!user || !displayUser?.id) return;
      const isFollowing = displayUser.followersCount?.includes(user.id);
      await toggleFollow(user.id, displayUser.id, isFollowing);
+  };
+  
+  const handleReportPost = async (postId: string, ownerId: string) => {
+    if (!user) return;
+    const reason = prompt('Please enter the reason for reporting this post:');
+    if (reason && reason.trim()) {
+        try {
+            await reportPost(postId, ownerId, user.id, reason.trim());
+            alert('Report submitted successfully.');
+        } catch (e) {
+            alert('Failed to submit report. Please try again.');
+        }
+    }
   };
   
   const [showEditModal, setShowEditModal] = useState(false);
@@ -529,12 +543,21 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
                       </p>
                     </div>
                   </div>
-                  {isOwnProfile && (
+                  {isOwnProfile ? (
                      <button 
                        onClick={() => deletePost(post.id)}
                        className="text-slate-400 hover:text-rose-500 transition p-2"
+                       title="Delete Post"
                      >
                        <Trash2 className="w-4 h-4" />
+                     </button>
+                  ) : (
+                     <button
+                        onClick={() => handleReportPost(post.id, activeProfileId)}
+                        className="text-slate-400 hover:text-rose-500 transition p-2 flex items-center gap-1 text-xs font-semibold"
+                        title="Report Post"
+                     >
+                        <Flag className="w-4 h-4" /> Report
                      </button>
                   )}
                 </div>

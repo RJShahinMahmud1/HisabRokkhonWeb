@@ -5,6 +5,12 @@ import { auth, db, handleFirestoreError, OperationType, updateUserProfile } from
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
+// Add new admin emails here to grant them admin access
+const ADMIN_EMAILS = [
+  'technicalshahin04@gmail.com',
+  // 'anotheruser@gmail.com'
+];
+
 export interface State {
   user: User | null;
   categories: Category[];
@@ -118,10 +124,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       let currentUsername = undefined;
       let currentSetupStatus = false;
+      let currentPublicPosts: any[] = [];
       try {
         const profileSnap = await getDoc(doc(db, 'publicProfiles', userId));
         if (profileSnap.exists()) {
           currentUsername = profileSnap.data().username;
+          currentPublicPosts = profileSnap.data().posts || [];
           if (profileSnap.data().profileSetupCompleted !== undefined) {
              currentSetupStatus = profileSnap.data().profileSetupCompleted;
           }
@@ -154,7 +162,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
              profileSetupCompleted: remoteState.user?.profileSetupCompleted ?? currentSetupStatus ?? false,
              followers: remoteState.user?.followers || 0,
              following: remoteState.user?.following || 0,
-             posts: remoteState.posts || [],
+             role: ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? 'admin' : (remoteState.user?.role || 'user'),
+             banned: remoteState.user?.banned || false,
+             messagesDisabled: remoteState.user?.messagesDisabled || false,
              updatedAt: serverTimestamp()
           }, { merge: true }).catch(console.error);
           
@@ -162,12 +172,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             const nextState = { 
               ...s, 
               ...remoteState, 
+              posts: currentPublicPosts?.length > 0 ? currentPublicPosts : (remoteState.posts || []),
               user: s.user ? { 
                   ...(remoteState.user || {}),
                   name: nextName, 
                   avatarUrl: nextAvatar,
                   profileSetupCompleted: remoteState.user?.profileSetupCompleted ?? currentSetupStatus,
-                  username: currentUsername || remoteState.user?.username
+                  username: currentUsername || remoteState.user?.username,
+                  role: ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? 'admin' : (remoteState.user?.role || 'user'),
+                  banned: remoteState.user?.banned || false,
+                  messagesDisabled: remoteState.user?.messagesDisabled || false
               } : s.user 
             };
             isInitialLoad.current = false;
@@ -190,7 +204,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, { merge: true }).catch(console.error);
       
       setState(s => {
-         const ns = { ...s, user: s.user ? { ...s.user, username: currentUsername, profileSetupCompleted: currentSetupStatus } : s.user };
+         const adminRole = ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? 'admin' : 'user';
+         const ns = { ...s, user: s.user ? { ...s.user, username: currentUsername, profileSetupCompleted: currentSetupStatus, role: adminRole } : s.user };
          isInitialLoad.current = false;
          return ns;
       });
@@ -202,11 +217,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // LocalStorage fallback
-    localStorage.setItem('hisab_rokkhok_data', JSON.stringify(state));
+    const stateToSaveLocal = { ...state, posts:[] };
+    localStorage.setItem('hisab_rokkhok_data', JSON.stringify(stateToSaveLocal));
     
     // Remote Sync (debounced)
     if (!isInitialLoad.current && state.user) {
-      const stateToSave = { ...state };
+      const stateToSave = { ...state, posts:[] };
       
       const timeout = setTimeout(async () => {
          try {
@@ -273,6 +289,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               profileSetupCompleted: updates.profileSetupCompleted ?? state.user.profileSetupCompleted ?? false,
               followers: updates.followers ?? state.user.followers ?? 0,
               following: updates.following ?? state.user.following ?? 0,
+              role: state.user.role || 'user',
+              banned: state.user.banned || false,
+              messagesDisabled: state.user.messagesDisabled || false,
               updatedAt: serverTimestamp()
             }, { merge: true }).catch(e => console.error("Could not sync public profile", e));
           }

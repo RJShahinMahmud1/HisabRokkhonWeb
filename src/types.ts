@@ -52,7 +52,7 @@ export interface Budget {
   month: string; // YYYY-MM
 }
 
-export type ViewState = 'dashboard' | 'income' | 'expense' | 'loans' | 'savings' | 'budget' | 'reports' | 'history' | 'settings' | 'profile' | 'messages';
+export type ViewState = 'dashboard' | 'income' | 'expense' | 'loans' | 'savings' | 'budget' | 'reports' | 'history' | 'settings' | 'profile' | 'messages' | 'admin';
 
 export interface User {
   id: string;
@@ -72,6 +72,20 @@ export interface User {
   profileSetupCompleted?: boolean;
   followersCount?: string[];
   followingCount?: string[];
+  role?: 'admin' | 'user';
+  banned?: boolean;
+  messagesDisabled?: boolean;
+}
+
+export interface Report {
+  id: string;
+  postId: string;
+  postOwnerId: string;
+  reporterId: string;
+  reason: string;
+  status: 'pending' | 'resolved' | 'dismissed';
+  createdAt: string;
+  postContent?: string;
 }
 
 export interface PostComment {

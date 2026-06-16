@@ -9,7 +9,8 @@ import {
   User as UserIcon,
   PiggyBank,
   BookOpen,
-  MessageCircle
+  MessageCircle,
+  Shield
 } from 'lucide-react';
 import { useAppStore } from '../store';
 import { ViewState } from '../types';
@@ -53,6 +54,10 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
     { id: 'messages', label: t.messages, icon: <MessageCircle size={18} /> },
   ];
+
+  if (user?.role === 'admin') {
+      menuItems.push({ id: 'admin', label: 'Admin Panel', icon: <Shield size={18} /> });
+  }
 
   // Fetch unread count globally
   const [totalUnread, setTotalUnread] = React.useState(0);

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -24,6 +24,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 
 export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, onViewProfile?: (uid: string) => void }) {
   const { user, lang, isDark } = useAppStore();
+  
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConvId, setActiveConvId] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -42,6 +43,19 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  if (user?.messagesDisabled) {
+      return (
+          <div className="flex h-full pb-24 items-center justify-center p-4">
+               <div className="bg-orange-50 dark:bg-orange-900/20 p-8 rounded-3xl text-center max-w-sm border border-orange-200 dark:border-orange-900/30 shadow-xl">
+                    <MessageSquareOff className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Messaging Disabled</h2>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm">Your messaging capabilities have been temporarily disabled by an administrator.</p>
+                    <button onClick={onBack} className="mt-6 text-orange-600 font-semibold text-sm">Go Back</button>
+               </div>
+          </div>
+      );
+  }
 
   // Global presence effect
   useEffect(() => {
