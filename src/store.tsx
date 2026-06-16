@@ -7,8 +7,8 @@ import { onAuthStateChanged } from 'firebase/auth';
 
 // Add new admin emails here to grant them admin access
 const ADMIN_EMAILS = [
-  'technicalshahin04@gmail.com',
-  // 'anotheruser@gmail.com'
+  'technicalshahin04@gmil.com',
+  // 'admin@gmail.com'
 ];
 
 export interface State {
