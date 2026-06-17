@@ -92,7 +92,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
 
   return (
     <div className={cn(
-      "flex h-screen relative overflow-hidden font-sans transition-colors",
+      "flex h-[100dvh] relative overflow-hidden font-sans transition-colors",
       isDark ? "bg-slate-900 text-slate-100" : "bg-slate-50 text-slate-800"
     )}>
       {/* Desktop Sidebar */}
@@ -178,7 +178,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
         )}
 
         <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none p-3 sm:p-6 lg:p-8 flex flex-col">
-          <div className="max-w-7xl mx-auto w-full flex-1">
+          <div className="max-w-7xl mx-auto w-full flex-1 flex flex-col">
             {children}
           </div>
           <div className="mt-8 text-center pb-4">

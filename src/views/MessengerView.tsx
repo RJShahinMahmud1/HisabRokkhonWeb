@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -38,6 +38,10 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const [editingMsgId, setEditingMsgId] = useState<string | null>(null);
   const [showConvOptions, setShowConvOptions] = useState(false);
   const [messageMenuId, setMessageMenuId] = useState<string | null>(null);
+
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [isTyping, setIsTyping] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -236,22 +240,88 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
       }
   };
 
+  const processImage = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new window.Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxDim = 800;
+            if (width > maxDim || height > maxDim) {
+                if (width > height) {
+                    height = Math.round((height * maxDim) / width);
+                    width = maxDim;
+                } else {
+                    width = Math.round((width * maxDim) / height);
+                    height = maxDim;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                setSelectedImage(compressedBase64);
+            }
+        };
+        img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+        processImage(file);
+    }
+  };
+
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!text.trim() || !activeConvId || !user || !otherUserId) return;
+    if (!activeConvId || !user || !otherUserId) return;
     
     const msgText = text.trim();
-    setText('');
+    if (!msgText && !selectedImage) return;
     
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     setTypingStatus(activeConvId, user.id, false);
     setIsTyping(false);
     
+    let replyPayload: any = undefined;
+    if (replyingTo) {
+        replyPayload = {
+            id: replyingTo.id,
+            text: replyingTo.text,
+            senderId: replyingTo.senderId,
+            senderName: replyingTo.senderId === user.id ? 'You' : (otherProfile?.name || 'Someone'),
+            imageUrl: replyingTo.imageUrl || ''
+        };
+    }
+
+    setText('');
+    setSelectedImage(null);
+    setReplyingTo(null);
+    
     if (editingMsgId) {
        await editMessage(activeConvId, editingMsgId, msgText);
        setEditingMsgId(null);
     } else {
-       await sendMessage(activeConvId, user.id, otherUserId, msgText);
+       await sendMessage(activeConvId, user.id, otherUserId, msgText, selectedImage || undefined, replyPayload);
     }
   };
 
@@ -278,7 +348,7 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   };
 
   return (
-    <div className={`flex h-[calc(100vh-2rem)] pb-24 overflow-hidden rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'} shadow-xl`}>
+    <div className={`flex flex-1 min-h-[500px] sm:min-h-[600px] overflow-hidden rounded-2xl border ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-200 bg-white'} shadow-xl`}>
       {/* LEFT SIDEBAR - List */}
       <div className={`w-full md:w-80 border-r ${isDark ? 'border-slate-800' : 'border-slate-200'} flex flex-col ${activeConvId ? 'hidden md:flex' : 'flex'}`}>
         
@@ -415,7 +485,21 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                 </div>
 
                 {/* Messages Area */}
-                <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${isDark ? 'bg-[#0f172a]' : 'bg-[#F0F2F5]'}`} onClick={() => setMessageMenuId(null)}>
+                <div 
+                    className={`flex-1 overflow-y-auto p-4 space-y-4 relative ${isDark ? 'bg-[#0f172a]' : 'bg-[#F0F2F5]'} ${isDragging ? 'ring-4 ring-blue-500/40' : ''}`} 
+                    onClick={() => setMessageMenuId(null)}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    {isDragging && (
+                       <div className="absolute inset-0 bg-blue-500/10 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-blue-500/40 rounded-xl z-30 pointer-events-none">
+                           <div className="bg-white dark:bg-slate-900 rounded-2xl px-6 py-4 shadow-xl text-center space-y-2 animate-bounce">
+                               <ImageIcon className="w-8 h-8 text-blue-500 mx-auto" />
+                               <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">এখানে ছবি ড্রপ করুন</p>
+                           </div>
+                       </div>
+                    )}
                     {messages.filter(msg => !user || !msg.deletedFor?.includes(user.id)).map((msg, idx, arr) => {
                         const isMe = msg.senderId === user?.id;
                         const showAvatar = !isMe && (idx === arr.length - 1 || arr[idx + 1]?.senderId !== msg.senderId);
@@ -432,9 +516,49 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                                         )}
                                     </div>
                                 )}
-                                <div className={`flex flex-col relative max-w-[70%] lg:max-w-[60%] ${isMe ? 'items-end' : 'items-start'}`}>
+                                <div id={`msg-${msg.id}`} className={`flex flex-col relative max-w-[70%] lg:max-w-[60%] ${isMe ? 'items-end' : 'items-start'} group/bubble transition-transform`}>
+                                    {msg.replyTo && !msg.isDeletedForEveryone && (
+                                        <div 
+                                            onClick={() => {
+                                                const el = document.getElementById(`msg-${msg.replyTo?.id}`);
+                                                if (el) {
+                                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                    el.classList.add('ring-4', 'ring-blue-500/50', 'rounded-2xl', 'scale-105');
+                                                    setTimeout(() => el.classList.remove('ring-4', 'ring-blue-500/50', 'rounded-2xl', 'scale-105'), 1200);
+                                                }
+                                            }}
+                                            className={`mb-1 px-3 py-1.5 text-xs rounded-xl flex flex-col cursor-pointer transition-all duration-200 border-l-2 max-w-full ${
+                                                isMe 
+                                                    ? 'bg-blue-900/40 text-blue-100 hover:bg-blue-900/60 border-blue-400 self-end' 
+                                                    : 'bg-slate-200/60 dark:bg-slate-800/60 text-slate-500 dark:text-slate-300 hover:bg-slate-300/60 border-slate-400 self-start'
+                                            }`}
+                                        >
+                                            <span className="font-semibold text-[10px] text-blue-500 dark:text-blue-400">
+                                                Replying to {msg.replyTo.senderName || 'Someone'}
+                                            </span>
+                                            <span className="truncate max-w-[180px] break-all opacity-85">
+                                                {msg.replyTo.imageUrl ? '📷 Photo' : msg.replyTo.text}
+                                            </span>
+                                        </div>
+                                    )}
+
                                     <div className={`group flex items-center gap-2 ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
                                         <div className={`px-4 py-2.5 shadow-sm text-[15px] ${msg.isDeletedForEveryone ? 'italic opacity-60 ' : ''}${isMe ? 'bg-blue-600 text-white rounded-2xl rounded-br-sm' : (isDark ? 'bg-slate-800 text-white' : 'bg-white text-slate-900') + ' rounded-2xl rounded-bl-sm border border-slate-100 dark:border-slate-700'}`}>
+                                            {!msg.isDeletedForEveryone && msg.imageUrl && (
+                                                <div className="mb-2 max-w-xs overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-700/50">
+                                                    <img 
+                                                        src={msg.imageUrl} 
+                                                        alt="Message attachment" 
+                                                        className="max-h-64 object-contain rounded-xl w-full hover:scale-[1.02] active:scale-[0.98] transition cursor-pointer"
+                                                        onClick={() => {
+                                                            const win = window.open();
+                                                            if (win) {
+                                                                win.document.write(`<img src="${msg.imageUrl}" style="max-width:100%; max-height:100vh; display:block; margin:auto; background:#111;" />`);
+                                                            }
+                                                        }}
+                                                    />
+                                                </div>
+                                            )}
                                             <p className="break-words">{msg.text}</p>
                                         </div>
                                         <div className="relative opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -451,6 +575,11 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                                                         </button>
                                                     ))}
                                                 </div>
+                                                {!msg.isDeletedForEveryone && (
+                                                    <button onClick={() => { setReplyingTo(msg); setMessageMenuId(null); }} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2 border-b border-slate-100 dark:border-slate-800 pb-2 mb-1">
+                                                        <CornerUpLeft className="w-4 h-4 text-blue-500" /> Reply
+                                                    </button>
+                                                )}
                                                 {canEdit && (
                                                     <button onClick={() => handleEditClick(msg)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center gap-2">
                                                         <Edit3 className="w-4 h-4" /> Edit Message
@@ -510,15 +639,63 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                             </button>
                         </div>
                     )}
+
+                    {replyingTo && (
+                        <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-955/40 rounded-lg px-4 py-2 mb-2 border border-blue-100 dark:border-blue-900/40 animate-in slide-in-from-bottom-2 duration-200">
+                            <div className="flex flex-col text-xs text-slate-600 dark:text-slate-300">
+                                <span className="font-semibold text-blue-500 flex items-center gap-1">
+                                    <CornerUpLeft className="w-3 h-3" /> Replying to {replyingTo.senderId === user?.id ? 'Yourself' : otherProfile?.name}
+                                </span>
+                                <span className="truncate max-w-[240px] opacity-85 italic">
+                                    {replyingTo.imageUrl ? '📷 Photo' : replyingTo.text}
+                                </span>
+                            </div>
+                            <button onClick={() => setReplyingTo(null)} className="text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
+
+                    {selectedImage && (
+                        <div className="relative inline-block p-1.5 bg-slate-100 dark:bg-slate-800 rounded-xl max-w-[120px] animate-in zoom-in-95 duration-200 mb-3">
+                            <img src={selectedImage} alt="Selected preview" className="w-24 h-24 object-cover rounded-lg" />
+                            <button onClick={() => setSelectedImage(null)} className="absolute -top-1.5 -right-1.5 p-1 bg-rose-600 text-white rounded-full hover:bg-rose-700 shadow shadow-rose-900/50 transition">
+                                <X className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSend} className="flex items-center gap-2">
+                        <input
+                            type="file"
+                            accept="image/*"
+                            id="chat-image-picker"
+                            className="hidden"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) processImage(file);
+                            }}
+                        />
+                        <label 
+                            htmlFor="chat-image-picker" 
+                            title="ছবি যুক্ত করুন"
+                            className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-500 hover:text-blue-500 transition shrink-0"
+                        >
+                            <ImageIcon className="w-5 h-5" />
+                        </label>
+
                         <input
                             type="text"
                             value={text}
                             onChange={handleTextChange}
-                            placeholder="Type a message..."
+                            placeholder={selectedImage ? "ছবির সাথে ক্যাপশন লিখুন..." : "Type a message..."}
                             className={`flex-1 rounded-full px-4 py-2.5 outline-none ${isDark ? 'bg-slate-900 text-white placeholder-slate-500' : 'bg-slate-100 text-slate-900 placeholder-slate-500'} focus:ring-2 focus:ring-blue-500/50`}
                         />
-                        <button type="submit" disabled={!text.trim()} className="p-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 shrink-0">
+                        <button 
+                            type="submit" 
+                            disabled={!text.trim() && !selectedImage} 
+                            className="p-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 shrink-0"
+                        >
                             <Send className="w-5 h-5" />
                         </button>
                     </form>

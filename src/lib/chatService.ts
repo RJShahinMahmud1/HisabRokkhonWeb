@@ -44,6 +44,14 @@ export interface Message {
   isDeletedForEveryone?: boolean;
   deletedFor?: string[];
   reactions?: Record<string, string>;
+  imageUrl?: string;
+  replyTo?: {
+    id: string;
+    text: string;
+    senderId: string;
+    senderName?: string;
+    imageUrl?: string;
+  };
 }
 
 export const subscribeToConversations = (userId: string, callback: (convs: Conversation[]) => void) => {
@@ -137,15 +145,36 @@ export const getOrCreateConversation = async (currentUserId: string, otherUserId
   return newRef.id;
 };
 
-export const sendMessage = async (conversationId: string, senderId: string, otherUserId: string, text: string) => {
+export const sendMessage = async (
+  conversationId: string,
+  senderId: string,
+  otherUserId: string,
+  text: string,
+  imageUrl?: string,
+  replyTo?: {
+    id: string;
+    text: string;
+    senderId: string;
+    senderName?: string;
+    imageUrl?: string;
+  }
+) => {
   // 1. Add Message
-  await addDoc(collection(db, `conversations/${conversationId}/messages`), {
+  const messagePayload: any = {
     conversationId,
     senderId,
     text,
     status: 'sent',
     createdAt: serverTimestamp()
-  });
+  };
+  if (imageUrl) {
+    messagePayload.imageUrl = imageUrl;
+  }
+  if (replyTo) {
+    messagePayload.replyTo = replyTo;
+  }
+
+  await addDoc(collection(db, `conversations/${conversationId}/messages`), messagePayload);
 
   // 2. Update Conversation
   // Get current unread to increment
@@ -162,7 +191,7 @@ export const sendMessage = async (conversationId: string, senderId: string, othe
   const updatedDeletedFor = currentDeletedFor.filter(id => id !== senderId && id !== otherUserId);
 
   await updateDoc(convRef, {
-    lastMessageText: text,
+    lastMessageText: imageUrl ? '📷 Photo' : text,
     lastMessageSenderId: senderId,
     lastMessageTime: serverTimestamp(),
     [`unreadCount.${otherUserId}`]: otherUnread + 1,
@@ -210,18 +239,35 @@ export const updateUserPresence = async (userId: string, isOnline: boolean) => {
 };
 
 export const editMessage = async (conversationId: string, messageId: string, text: string) => {
-  await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
+  const msgRef = doc(db, `conversations/${conversationId}/messages/${messageId}`);
+  await updateDoc(msgRef, {
     text,
     isEdited: true,
     editedAt: serverTimestamp(),
   });
+
+  const convRef = doc(db, 'conversations', conversationId);
+  const q = query(collection(db, `conversations/${conversationId}/messages`), orderBy('createdAt', 'desc'), limit(1));
+  const snap = await getDocs(q);
+  if (!snap.empty && snap.docs[0].id === messageId) {
+    await updateDoc(convRef, { lastMessageText: text });
+  }
 };
 
 export const deleteMessageForEveryone = async (conversationId: string, messageId: string) => {
-  await updateDoc(doc(db, `conversations/${conversationId}/messages/${messageId}`), {
-    text: 'এই মেসেজটি ডিলিট করা হয়েছে',
+  const msgRef = doc(db, `conversations/${conversationId}/messages/${messageId}`);
+  const deletedText = 'এই মেসেজটি ডিলিট করা হয়েছে';
+  await updateDoc(msgRef, {
+    text: deletedText,
     isDeletedForEveryone: true,
   });
+
+  const convRef = doc(db, 'conversations', conversationId);
+  const q = query(collection(db, `conversations/${conversationId}/messages`), orderBy('createdAt', 'desc'), limit(1));
+  const snap = await getDocs(q);
+  if (!snap.empty && snap.docs[0].id === messageId) {
+    await updateDoc(convRef, { lastMessageText: deletedText });
+  }
 };
 
 export const deleteMessageForMe = async (conversationId: string, messageId: string, userId: string, message: Message) => {
