@@ -6,12 +6,13 @@ import { updateUserPassword, db } from '../lib/firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { ProfileSetupWizard } from '../components/ProfileSetupWizard';
 import { PublicProfile } from '../lib/chatService';
-import { toggleReaction, addComment, toggleFollow } from '../lib/socialService';
+import { toggleLike, addPostComment, toggleFollow, subscribeToUserPosts, SocialPost, createPost, deletePost as deleteSocialPost } from '../lib/socialService';
 import { reportPost } from '../lib/adminService';
 import { UserListModal } from '../components/UserListModal';
+import { PostComments } from './social/PostComments';
 
 export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: string | null, onBack?: () => void, onViewProfile?: (uid: string) => void }) {
-  const { user, updateProfile, logout, importState, addPost, deletePost, posts } = useAppStore();
+  const { user, updateProfile, logout, importState } = useAppStore();
 
   const isOwnProfile = !profileId || profileId === user?.id;
 
@@ -35,7 +36,16 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
   }, [activeProfileId]);
 
   const displayUser = isOwnProfile ? { ...user, ...publicUser } : publicUser;
-  const displayPosts = publicUser?.posts || (isOwnProfile ? posts : []);
+  const [displayPosts, setDisplayPosts] = useState<SocialPost[]>([]);
+
+  useEffect(() => {
+    if (activeProfileId) {
+      const unsub = subscribeToUserPosts(activeProfileId, (fetched) => {
+        setDisplayPosts(fetched);
+      });
+      return () => unsub();
+    }
+  }, [activeProfileId]);
 
   const [editName, setEditName] = useState(user?.name || '');
   const [avatar, setAvatar] = useState(user?.avatarUrl || '');
@@ -58,21 +68,20 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
 
   const handleToggleLike = async (postId: string) => {
     if (!user || !activeProfileId) return;
-    await toggleReaction(activeProfileId, postId, user.id, '❤️');
+    await toggleLike(postId, user.id, activeProfileId);
   };
 
   const handlePostComment = async (postId: string) => {
     if (!user || !activeProfileId) return;
     const text = commentText[postId]?.trim();
     if (!text) return;
-    await addComment(activeProfileId, postId, user.id, text);
+    await addPostComment(postId, user.id, text, activeProfileId);
     setCommentText(prev => ({ ...prev, [postId]: '' }));
   };
 
   const handleToggleFollow = async () => {
      if (!user || !displayUser?.id) return;
-     const isFollowing = displayUser.followersCount?.includes(user.id);
-     await toggleFollow(user.id, displayUser.id, isFollowing);
+     await toggleFollow(user.id, displayUser.id);
   };
   
   const handleReportPost = async (postId: string, ownerId: string) => {
@@ -213,14 +222,11 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
     }
   };
 
-  const handleCreatePost = (e: React.FormEvent) => {
+  const handleCreatePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!postContent.trim() && !postImage) return;
-    addPost({
-      content: postContent,
-      imageUrl: postImage,
-      createdAt: new Date().toISOString()
-    });
+    if (!user) return;
+    await createPost(user.id, postContent, postImage);
     setPostContent('');
     setPostImage('');
   };
@@ -545,7 +551,7 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
                   </div>
                   {isOwnProfile ? (
                      <button 
-                       onClick={() => deletePost(post.id)}
+                       onClick={() => deleteSocialPost(post.id)}
                        className="text-slate-400 hover:text-rose-500 transition p-2"
                        title="Delete Post"
                      >
@@ -574,61 +580,29 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
                 
                 {/* Interactions */}
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
-                    {post.reactions && Object.keys(post.reactions).length > 0 && (
-                        <div className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 mb-3 px-2">
-                            <span className="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded-full shadow-sm text-xs border border-white dark:border-slate-700">❤️</span>
-                            <span>{Object.keys(post.reactions).length}</span>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-3 px-2">
+                        <span className="flex items-center gap-1.5"><Heart className="w-4 h-4 text-rose-500" /> {post.likesCount || 0}</span>
+                        <span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4 text-blue-500" /> {post.commentsCount || 0}</span>
+                    </div>
+
+                    <div className="flex gap-2">
                         <button 
                             onClick={() => handleToggleLike(post.id)}
-                            className={`flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold ${user && post.reactions?.[user.id] ? 'text-rose-500 bg-rose-50 dark:bg-rose-500/10' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                            className={`flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800`}
                         >
-                            <Heart className={`w-5 h-5 ${user && post.reactions?.[user.id] ? 'fill-current' : ''}`} />
-                            <span>Like</span>
+                            <Heart className="w-5 h-5" /> Like
                         </button>
                         <button 
                             onClick={() => setShowCommentsFor(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
                             className="flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
                         >
                             <MessageSquare className="w-5 h-5" />
-                            <span>Comment {post.comments?.length ? `(${post.comments.length})` : ''}</span>
+                            <span>Comment</span>
                         </button>
                     </div>
 
                     {showCommentsFor[post.id] && (
-                        <div className="mt-4 space-y-3">
-                            <div className="flex gap-2">
-                                <input 
-                                   type="text"
-                                   placeholder="মন্তব্য লিখুন..."
-                                   value={commentText[post.id] || ''}
-                                   onChange={e => setCommentText(prev => ({ ...prev, [post.id]: e.target.value }))}
-                                   className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-xl px-4 py-2 border-none outline-none focus:ring-2 focus:ring-blue-500/50 dark:text-white text-sm"
-                                />
-                                <button
-                                   onClick={() => handlePostComment(post.id)}
-                                   disabled={!commentText[post.id]?.trim()}
-                                   className="bg-blue-600 text-white p-2.5 rounded-xl disabled:opacity-50"
-                                >
-                                   <Send className="w-4 h-4" />
-                                </button>
-                            </div>
-                            
-                            {post.comments && post.comments.length > 0 && (
-                                <div className="space-y-3 mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
-                                    {post.comments.map((comment: any) => (
-                                        <div key={comment.id} className="flex gap-2 text-sm">
-                                            <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-2xl rounded-tl-sm px-4 py-2">
-                                                <span className="font-semibold block text-slate-900 dark:text-white text-[13px] mb-0.5">{comment.userId === user?.id ? (user?.name) : 'User'}</span>
-                                                <p className="text-slate-700 dark:text-slate-300">{comment.text}</p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
+                        <PostComments postId={post.id} postAuthorId={activeProfileId || user?.id || ''} />
                     )}
                 </div>
               </CardContent>

@@ -1,95 +1,185 @@
 import { db } from './firebase';
-import { doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
-import { Post, PostComment } from '../types';
-import { v4 as uuidv4 } from 'uuid';
+import { collection, doc, setDoc, deleteDoc, getDocs, query, where, orderBy, onSnapshot, serverTimestamp, getDoc, addDoc, updateDoc, increment, arrayUnion, arrayRemove } from 'firebase/firestore';
 
-export const toggleFollow = async (currentUserId: string, targetUserId: string, isFollowing: boolean) => {
-  const currentUserRef = doc(db, 'publicProfiles', currentUserId);
-  const targetUserRef = doc(db, 'publicProfiles', targetUserId);
+export interface SocialPost {
+    id: string;
+    authorId: string;
+    content: string;
+    imageUrl?: string;
+    likesCount: number;
+    commentsCount: number;
+    createdAt: any;
+    reactions?: Record<string, string>; // Backward compat for old reaction UI
+}
 
-  try {
-    if (isFollowing) {
-      await setDoc(currentUserRef, { followingCount: arrayRemove(targetUserId) }, { merge: true });
-      await setDoc(targetUserRef, { followersCount: arrayRemove(currentUserId) }, { merge: true });
+export const subscribeToNewsfeed = (callback: (posts: SocialPost[]) => void) => {
+    const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
+    return onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+        const posts: SocialPost[] = [];
+        snapshot.forEach(doc => {
+            posts.push({ id: doc.id, ...doc.data() } as SocialPost);
+        });
+        callback(posts);
+    }, (error) => {
+        console.error("subscribeToNewsfeed error:", error);
+    });
+};
+
+export const subscribeToUserPosts = (userId: string, callback: (posts: SocialPost[]) => void) => {
+    const q = query(collection(db, 'posts'), where('authorId', '==', userId));
+    return onSnapshot(q, (snapshot) => {
+        const posts: SocialPost[] = [];
+        snapshot.forEach(doc => {
+            posts.push({ id: doc.id, ...doc.data() } as SocialPost);
+        });
+        posts.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis() || 0;
+            const timeB = b.createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+        callback(posts);
+    }, (error) => {
+        console.error("subscribeToUserPosts error:", error);
+    });
+};
+
+export const createPost = async (authorId: string, content: string, imageUrl?: string) => {
+    await addDoc(collection(db, 'posts'), {
+        authorId,
+        content,
+        imageUrl: imageUrl || null,
+        likesCount: 0,
+        commentsCount: 0,
+        createdAt: serverTimestamp()
+    });
+};
+
+export const deletePost = async (postId: string) => {
+    await deleteDoc(doc(db, 'posts', postId));
+};
+
+export const toggleLike = async (postId: string, userId: string, targetAuthorId: string, type: 'like'|'love'|'haha'|'wow'|'angry' = 'like') => {
+    const reactionRef = doc(db, 'userReactions', userId);
+    const postRef = doc(db, 'posts', postId);
+
+    const reactionDoc = await getDoc(reactionRef);
+    const currentReactions = reactionDoc.exists() ? reactionDoc.data() : {};
+    const currentReaction = currentReactions[postId];
+
+    if (currentReaction === type) {
+        // Toggle off
+        const updated = { ...currentReactions };
+        delete updated[postId];
+        await setDoc(reactionRef, updated);
+        await updateDoc(postRef, { likesCount: increment(-1) });
     } else {
-      await setDoc(currentUserRef, { followingCount: arrayUnion(targetUserId) }, { merge: true });
-      await setDoc(targetUserRef, { followersCount: arrayUnion(currentUserId) }, { merge: true });
-    }
-  } catch (error) {
-    console.error('Error toggling follow', error);
-  }
-};
-
-export const subscribeToProfileStats = (userId: string, callback: (stats: any) => void) => {
-  return onSnapshot(doc(db, 'publicProfiles', userId), (doc) => {
-    if (doc.exists()) {
-       const data = doc.data();
-       callback({
-           followers: data.followersCount?.length || 0,
-           following: data.followingCount?.length || 0,
-           followersList: data.followersCount || [],
-           followingList: data.followingCount || [],
-       });
-    }
-  });
-};
-
-export const toggleReaction = async (targetUserId: string, postId: string, userId: string, emoji: string) => {
-    const targetRef = doc(db, 'publicProfiles', targetUserId);
-    const snap = await getDoc(targetRef);
-    if (!snap.exists()) return;
-    const data = snap.data();
-    const posts: Post[] = data.posts || [];
-    
-    const updatedPosts = posts.map(p => {
-        if (p.id === postId) {
-            const reactions = { ...(p.reactions || {}) };
-            if (reactions[userId] === emoji) {
-                delete reactions[userId];
-            } else {
-                reactions[userId] = emoji;
+        // Toggle on or change
+        await setDoc(reactionRef, { ...currentReactions, [postId]: type });
+        if (!currentReaction) {
+            await updateDoc(postRef, { likesCount: increment(1) });
+            
+            // Notify
+            if (userId !== targetAuthorId) {
+                await addDoc(collection(db, 'notifications'), {
+                    receiverId: targetAuthorId,
+                    senderId: userId,
+                    type: 'like',
+                    postId,
+                    read: false,
+                    createdAt: serverTimestamp()
+                });
             }
-            return { ...p, reactions };
         }
-        return p;
-    });
-
-    await setDoc(targetRef, { posts: updatedPosts }, { merge: true });
+    }
 };
 
-export const addComment = async (targetUserId: string, postId: string, userId: string, text: string, replyToCommentId?: string) => {
-    const targetRef = doc(db, 'publicProfiles', targetUserId);
-    const snap = await getDoc(targetRef);
-    if (!snap.exists()) return;
-    const data = snap.data();
-    const posts: Post[] = data.posts || [];
-    
-    const newComment: PostComment = {
-        id: uuidv4(),
-        userId,
-        text,
-        createdAt: new Date().toISOString()
-    };
-
-    const updatedPosts = posts.map(p => {
-        if (p.id === postId) {
-            const comments = [...(p.comments || [])];
-            if (replyToCommentId) {
-                const commentIndex = comments.findIndex(c => c.id === replyToCommentId);
-                if (commentIndex !== -1) {
-                    const parentComment = comments[commentIndex];
-                    comments[commentIndex] = {
-                        ...parentComment,
-                        replies: [...(parentComment.replies || []), newComment]
-                    };
-                }
-            } else {
-                comments.push(newComment);
-            }
-            return { ...p, comments };
+export const subscribeToUserReactions = (userId: string, callback: (reactions: Record<string, string>) => void) => {
+    return onSnapshot(doc(db, 'userReactions', userId), { includeMetadataChanges: true }, (doc) => {
+        if (doc.exists()) {
+            callback(doc.data());
+        } else {
+            callback({});
         }
-        return p;
+    }, (error) => {
+        console.error("subscribeToUserReactions error:", error);
     });
+};
 
-    await setDoc(targetRef, { posts: updatedPosts }, { merge: true });
+export const fetchComments = (postId: string, callback: (comments: any[]) => void) => {
+    const q = query(collection(db, 'posts', postId, 'comments'), orderBy('createdAt', 'asc'));
+    return onSnapshot(q, (snap) => {
+        const comments = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        callback(comments);
+    }, (error) => {
+        console.error("fetchComments error:", error);
+    });
+};
+
+export const addPostComment = async (postId: string, authorId: string, content: string, targetAuthorId: string, replyToCommentId?: string) => {
+    await addDoc(collection(db, 'posts', postId, 'comments'), {
+        postId,
+        authorId,
+        content,
+        replyToCommentId: replyToCommentId || null,
+        createdAt: serverTimestamp()
+    });
+    await updateDoc(doc(db, 'posts', postId), { commentsCount: increment(1) });
+
+    if (authorId !== targetAuthorId) {
+        await addDoc(collection(db, 'notifications'), {
+            receiverId: targetAuthorId,
+            senderId: authorId,
+            type: 'comment',
+            postId,
+            read: false,
+            createdAt: serverTimestamp()
+        });
+    }
+};
+
+export const toggleFollow = async (currentUserId: string, targetUserId: string) => {
+    const followId = `${currentUserId}_${targetUserId}`;
+    const followRef = doc(db, 'follows', followId);
+    const followSnap = await getDoc(followRef);
+
+    if (followSnap.exists()) {
+        await deleteDoc(followRef);
+        await setDoc(doc(db, 'publicProfiles', currentUserId), { followingCount: arrayRemove(targetUserId) }, { merge: true });
+        await setDoc(doc(db, 'publicProfiles', targetUserId), { followersCount: arrayRemove(currentUserId) }, { merge: true });
+    } else {
+        await setDoc(followRef, {
+            followerId: currentUserId,
+            followingId: targetUserId,
+            createdAt: serverTimestamp()
+        });
+        await setDoc(doc(db, 'publicProfiles', currentUserId), { followingCount: arrayUnion(targetUserId) }, { merge: true });
+        await setDoc(doc(db, 'publicProfiles', targetUserId), { followersCount: arrayUnion(currentUserId) }, { merge: true });
+
+        await addDoc(collection(db, 'notifications'), {
+            receiverId: targetUserId,
+            senderId: currentUserId,
+            type: 'follow',
+            read: false,
+            createdAt: serverTimestamp()
+        });
+    }
+};
+
+export const subscribeToNotifications = (userId: string, callback: (notifs: any[]) => void) => {
+    const q = query(collection(db, 'notifications'), where('receiverId', '==', userId));
+    return onSnapshot(q, (snap) => {
+        const notifs = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        notifs.sort((a, b) => {
+            const timeA = (a as any).createdAt?.toMillis() || 0;
+            const timeB = (b as any).createdAt?.toMillis() || 0;
+            return timeB - timeA;
+        });
+        callback(notifs);
+    }, (error) => {
+        console.error("subscribeToNotifications error:", error);
+    });
+};
+
+export const markNotificationRead = async (notificationId: string) => {
+    await updateDoc(doc(db, 'notifications', notificationId), { read: true });
 };

@@ -28,18 +28,18 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
   if (!user) return <>{children}</>;
 
   const t = {
-    dashboard: lang === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard',
-    income: lang === 'bn' ? 'আয়' : 'Income',
-    expense: lang === 'bn' ? 'ব্যয়' : 'Expense',
-    loans: lang === 'bn' ? 'ধার/দেনা' : 'Loans',
-    savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
-    budget: lang === 'bn' ? 'বাজেট' : 'Budget',
-    reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
-    profile: lang === 'bn' ? 'SM Social' : 'SM Social',
-    settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
-    messages: lang === 'bn' ? 'মেসেজ' : 'Messages',
-    accountant: lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
-    logout: lang === 'bn' ? 'লগআউট' : 'Logout',
+    dashboard: lang === 'hi' ? 'डैशबोर्ड' : lang === 'bn' ? 'ড্যাশবোর্ড' : 'Dashboard',
+    income: lang === 'hi' ? 'आय' : lang === 'bn' ? 'আয়' : 'Income',
+    expense: lang === 'hi' ? 'व्यय' : lang === 'bn' ? 'ব্যয়' : 'Expense',
+    loans: lang === 'hi' ? 'ऋण' : lang === 'bn' ? 'ধার/দেনা' : 'Loans',
+    savings: lang === 'hi' ? 'बचत' : lang === 'bn' ? 'সঞ্চয়' : 'Savings',
+    budget: lang === 'hi' ? 'बजट' : lang === 'bn' ? 'বাজেট' : 'Budget',
+    reports: lang === 'hi' ? 'रिपोर्ट' : lang === 'bn' ? 'রিপোর্ট' : 'Reports',
+    profile: 'SM Social',
+    settings: lang === 'hi' ? 'श्रेणी प्रबंधन' : lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
+    messages: lang === 'hi' ? 'संदेश' : lang === 'bn' ? 'মেসেজ' : 'Messages',
+    accountant: lang === 'hi' ? 'मुनीम/अकाउंटेंट' : lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
+    logout: lang === 'hi' ? 'लॉगआउट' : lang === 'bn' ? 'লগআউট' : 'Logout',
   };
 
   const menuItems: { id: ViewState; label: string; icon: React.ReactNode }[] = [
@@ -50,9 +50,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     { id: 'savings', label: t.savings, icon: <PiggyBank size={18} /> },
     { id: 'budget', label: t.budget, icon: <PieChart size={18} /> },
     { id: 'reports', label: t.reports, icon: <PieChart size={18} /> },
-    { id: 'profile', label: t.profile, icon: <UserIcon size={18} /> },
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
-    { id: 'messages', label: t.messages, icon: <MessageCircle size={18} /> },
   ];
 
   if (user?.role === 'admin') {
@@ -137,9 +135,16 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
           </nav>
         </div>
         
-        <button onClick={() => onViewChange('profile')} className="mt-auto p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-slate-200 dark:hover:bg-slate-700 transition w-full group">
-          <p className="text-xs text-blue-600 dark:text-blue-400 font-medium mb-1">SM Social</p>
-          <div className="flex items-center gap-3 mb-4">
+        <button onClick={() => onViewChange('profile')} className="mt-auto p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-slate-200 dark:hover:bg-slate-700 transition w-full group relative">
+          <div className="flex items-center justify-between mb-1">
+            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">SM Social</p>
+            {totalUnread > 0 && (
+              <span className="w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
+                  {totalUnread > 99 ? '99+' : totalUnread}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-3 mb-2">
              <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-blue-200 dark:bg-blue-800 border-2 border-white dark:border-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
                {user.avatarUrl ? (
                  <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />

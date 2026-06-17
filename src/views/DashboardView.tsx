@@ -36,26 +36,26 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
   const totalCount = transactions.length;
 
   const t = {
-    welcome: lang === 'bn' ? 'সুস্বাগতম' : 'Welcome',
-    accountant: lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
-    balance: lang === 'bn' ? 'কারেন্ট ব্যালেন্স' : 'Current Balance',
-    transactions: lang === 'bn' ? 'লেনদেন' : 'Transactions',
-    income: lang === 'bn' ? 'আয়' : 'Income',
-    expense: lang === 'bn' ? 'ব্যয়' : 'Expense',
-    history: lang === 'bn' ? 'সব ইতিহাস' : 'History',
-    allHistory: lang === 'bn' ? 'সব হিসাব' : 'All History',
-    newIncome: lang === 'bn' ? 'নতুন আয়' : 'New Income',
-    newExpense: lang === 'bn' ? 'নতুন ব্যয়' : 'New Expense',
-    budget: lang === 'bn' ? 'লাভ-ক্ষতি' : 'Budget',
-    loans: lang === 'bn' ? 'উধারি' : 'Loans',
-    reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
-    savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
+    welcome: lang === 'hi' ? 'स्वागत हे' : lang === 'bn' ? 'সুস্বাগতম' : 'Welcome',
+    accountant: lang === 'hi' ? 'मुनीम' : lang === 'bn' ? 'হিসাব রক্ষক' : 'Accountant',
+    balance: lang === 'hi' ? 'कुल जमा राशि' : lang === 'bn' ? 'কারেন্ট ব্যালেন্স' : 'Current Balance',
+    transactions: lang === 'hi' ? 'लेनदेन' : lang === 'bn' ? 'লেনদেন' : 'Transactions',
+    income: lang === 'hi' ? 'आय' : lang === 'bn' ? 'আয়' : 'Income',
+    expense: lang === 'hi' ? 'व्यय' : lang === 'bn' ? 'ব্যয়' : 'Expense',
+    history: lang === 'hi' ? 'इतिहास' : lang === 'bn' ? 'সব ইতিহাস' : 'History',
+    allHistory: lang === 'hi' ? 'सभी इतिहास' : lang === 'bn' ? 'সব হিসাব' : 'All History',
+    newIncome: lang === 'hi' ? 'नई आय' : lang === 'bn' ? 'নতুন আয়' : 'New Income',
+    newExpense: lang === 'hi' ? 'नया व्यय' : lang === 'bn' ? 'নতুন ব্যয়' : 'New Expense',
+    budget: lang === 'hi' ? 'बजट' : lang === 'bn' ? 'লাভ-ক্ষতি' : 'Budget',
+    loans: lang === 'hi' ? 'ऋण / उधारी' : lang === 'bn' ? 'উধারি' : 'Loans',
+    reports: lang === 'hi' ? 'रिपोर्ट' : lang === 'bn' ? 'রিপোর্ট' : 'Reports',
+    savings: lang === 'hi' ? 'बचत' : lang === 'bn' ? 'সঞ্চয়' : 'Savings',
     profile: 'SM Social',
-    settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
-    messages: lang === 'bn' ? 'মেসেজিং' : 'Messaging',
-    allTransactions: lang === 'bn' ? 'সব লেনদেন' : 'All Trx',
-    totalIncome: lang === 'bn' ? 'মোট আয়' : 'Total Income',
-    totalExpense: lang === 'bn' ? 'মোট ব্যয়' : 'Total Expense',
+    settings: lang === 'hi' ? 'श्रेणी प्रबंधन' : lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
+    messages: lang === 'hi' ? 'संदेश' : lang === 'bn' ? 'মেসেজিং' : 'Messaging',
+    allTransactions: lang === 'hi' ? 'सभी लेनदेन' : lang === 'bn' ? 'সব লেনদেন' : 'All Trx',
+    totalIncome: lang === 'hi' ? 'कुल आय' : lang === 'bn' ? 'মোট আয়' : 'Total Income',
+    totalExpense: lang === 'hi' ? 'कुल व्यय' : lang === 'bn' ? 'মোট ব্যয়' : 'Total Expense',
   };
 
   const [totalUnread, setTotalUnread] = React.useState(0);
@@ -103,7 +103,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
       {/* Header */}
       <div className="flex items-center justify-between mb-6 sm:mb-8 md:hidden">
         <div className="flex items-center gap-3">
-          <div className="relative">
+          <button onClick={() => onChangeView('profile')} className="relative cursor-pointer transition-transform hover:scale-105">
             <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200">
                {user?.avatarUrl ? (
                  <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
@@ -113,20 +113,26 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
                  </div>
                )}
             </div>
-            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white"></div>
-          </div>
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{lang === 'bn' ? 'হাই' : 'Hi'}, {user?.name.split(' ')[0]}!</h2>
+            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+          </button>
+          <div onClick={() => onChangeView('profile')} className="cursor-pointer">
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{lang === 'hi' ? 'नमस्ते' : lang === 'bn' ? 'হাই' : 'Hi'}, {user?.name.split(' ')[0]}!</h2>
             <div className="flex items-center text-xs font-semibold bg-blue-500 text-white px-2.5 py-0.5 rounded-full cursor-pointer mt-0.5 max-w-max">
               {t.accountant} <ChevronDown size={14} className="ml-1 opacity-80" />
             </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <button onClick={() => onChangeView('messages')} className="p-2 relative text-slate-600 dark:text-slate-300">
+             <MessageCircle size={24} />
+             {totalUnread > 0 && (
+                <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+             )}
+          </button>
           <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">
             {isDark ? <Sun size={24} /> : <Moon size={24} />}
           </button>
-          <button onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')} className="p-2 flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold text-sm">
+          <button onClick={() => setLang(lang === 'bn' ? 'en' : lang === 'en' ? 'hi' : 'bn')} className="p-2 flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold text-sm">
             <Globe size={24} />
             <span className="uppercase">{lang}</span>
           </button>
@@ -135,8 +141,29 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
 
       {/* Modern Desktop Header Header Placeholder if needed */}
       <div className="hidden md:flex justify-between items-center mb-6 sm:mb-8">
-        <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t.welcome}, {user?.name.split(' ')[0]}! 👋</h2>
+        <div className="flex items-center gap-4">
+          <button onClick={() => onChangeView('profile')} className="relative cursor-pointer transition-transform hover:scale-105">
+            <div className="w-14 h-14 rounded-full overflow-hidden border border-slate-200">
+               {user?.avatarUrl ? (
+                 <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+               ) : (
+                 <div className="w-full h-full bg-emerald-100 flex items-center justify-center">
+                   <UserIcon size={24} className="text-emerald-600"/>
+                 </div>
+               )}
+            </div>
+            <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800"></div>
+          </button>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white cursor-pointer" onClick={() => onChangeView('profile')}>{t.welcome}, {user?.name.split(' ')[0]}! 👋</h2>
+            <div className="flex items-center gap-2 mt-1">
+                <button onClick={() => onChangeView('messages')} className="flex items-center gap-1.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-500 transition-colors">
+                    <MessageCircle size={18} />
+                    {t.messages}
+                    {totalUnread > 0 && <span className="bg-rose-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{totalUnread}</span>}
+                </button>
+            </div>
+          </div>
         </div>
         <div className="flex gap-4">
           <button 
@@ -144,6 +171,15 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
              className="bg-emerald-500 text-white px-4 sm:px-6 py-2 rounded-full font-bold shadow-md shadow-emerald-500/20 flex items-center gap-2 hover:bg-emerald-600 transition"
           >
             <span>+</span> IN
+          </button>
+          <button 
+             onClick={() => {
+                setHistorySearchTerm('');
+                onChangeView('history');
+             }}
+             className="bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 px-4 sm:px-6 py-2 rounded-full font-bold shadow-md shadow-slate-500/20 flex items-center gap-2 hover:bg-slate-700 dark:hover:bg-slate-300 transition"
+          >
+            ALL TRX
           </button>
            <button 
              onClick={() => onChangeView('expense')}
@@ -257,22 +293,20 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-6 sm:bottom-12 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center bg-white dark:bg-slate-800 rounded-full shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-slate-100 dark:border-slate-700 px-6 sm:px-8 py-2 sm:py-2.5 gap-8 sm:gap-12 md:hidden">
+      <div className="fixed bottom-6 sm:bottom-12 md:bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center bg-white dark:bg-slate-800 rounded-full shadow-[0_4px_30px_rgb(0,0,0,0.1)] border border-slate-100 dark:border-slate-700 px-6 sm:px-8 py-2.5 gap-6 sm:gap-8 md:hidden">
         <button onClick={() => onChangeView('income')} className="flex items-center gap-1.5 font-black tracking-tight text-[#14C969] hover:text-[#10A956] transition-colors whitespace-nowrap">
           <span className="text-[#14C969] text-base font-bold">৳</span> IN
         </button>
         
-        <div className="relative -mt-9">
+        <div className="relative -mt-7">
           <button 
-            onClick={() => onChangeView('messages')}
-            className="w-14 h-14 bg-[#5C9EFC] text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/20 border-4 border-white dark:border-slate-800 hover:scale-105 transition-transform relative"
+            onClick={() => {
+               setHistorySearchTerm('');
+               onChangeView('history');
+            }}
+            className="px-4 h-12 bg-slate-800 dark:bg-slate-200 text-white dark:text-slate-900 rounded-full flex items-center justify-center shadow-lg shadow-slate-500/20 border-[3.5px] border-white dark:border-slate-800 hover:scale-105 transition-transform font-black tracking-wide text-xs whitespace-nowrap"
           >
-            <MessageCircle size={24} strokeWidth={2.5} />
-            {totalUnread > 0 && (
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white border-2 border-white dark:border-slate-800 rounded-full text-[10px] flex items-center justify-center font-bold shadow-sm">
-                    {totalUnread > 99 ? '99+' : totalUnread}
-                </span>
-            )}
+            ALL TRX
           </button>
         </div>
 

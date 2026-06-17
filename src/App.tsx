@@ -5,6 +5,7 @@ import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
 import { TransactionView } from './views/TransactionView';
 import { ProfileView } from './views/ProfileView';
+import { SMSocialView } from './views/social/SMSocialView';
 import { SettingsView } from './views/SettingsView';
 import { ReportsView } from './views/ReportsView';
 import { HistoryView } from './views/HistoryView';
@@ -64,7 +65,7 @@ function AppContent() {
       case 'history': return <HistoryView />;
       case 'settings': return <SettingsView />;
       case 'admin': return <AdminView />;
-      case 'profile': return <ProfileView profileId={viewingProfileId} onViewProfile={handleViewProfile} onBack={() => { setViewingProfileId(null); setCurrentView('messages'); }} />;
+      case 'profile': return <SMSocialView initialProfileId={viewingProfileId} onViewProfile={handleViewProfile} />;
       case 'messages': return <MessengerView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
       default: return <DashboardView onChangeView={setCurrentView} />;
     }

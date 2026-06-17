@@ -115,7 +115,7 @@ export function AdminView() {
       ) : (
           <div className="space-y-4">
               {users.map((u) => (
-                  <div key={u.uid} className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                  <div key={u.uid || u.id} className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-between">
                       <div className="flex items-center gap-3">
                           <img src={u.avatarUrl || 'https://via.placeholder.com/40'} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
                           <div>

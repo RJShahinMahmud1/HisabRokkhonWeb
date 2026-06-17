@@ -21,7 +21,7 @@ export interface State {
   budgets: Budget[];
   isDark: boolean;
   historySearchTerm: string;
-  lang: 'bn' | 'en';
+  lang: 'bn' | 'en' | 'hi';
   posts: Post[];
 }
 
@@ -82,10 +82,12 @@ interface AppContextType extends State {
   deleteLoan: (id: string) => void;
   addSavingsGoal: (s: Omit<SavingsGoal, 'id'>) => void;
   updateSavingsGoal: (s: SavingsGoal) => void;
+  deleteSavingsGoal: (id: string) => void;
   setBudget: (b: Omit<Budget, 'id'>) => void;
+  deleteBudget: (id: string) => void;
   toggleTheme: () => void;
   setHistorySearchTerm: (term: string) => void;
-  setLang: (lang: 'bn' | 'en') => void;
+  setLang: (lang: 'bn' | 'en' | 'hi') => void;
   importState: (jsonString: string) => boolean;
 }
 
@@ -96,7 +98,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem('hisab_rokkhok_data');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return { ...parsed, user: null };
       } catch (e) {
         return initialState;
       }
@@ -217,7 +220,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // LocalStorage fallback
-    const stateToSaveLocal = { ...state, posts:[] };
+    const stateToSaveLocal = { ...state, user: null, posts:[] };
     localStorage.setItem('hisab_rokkhok_data', JSON.stringify(stateToSaveLocal));
     
     // Remote Sync (debounced)
@@ -429,6 +432,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const deleteSavingsGoal = (id: string) => {
+    setState((s) => ({
+      ...s,
+      savingsGoals: s.savingsGoals.filter((g) => g.id !== id),
+    }));
+  };
+
   const setBudget = (b: Omit<Budget, 'id'>) => {
     setState((s) => {
       const existing = s.budgets.find(
@@ -450,6 +460,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const deleteBudget = (id: string) => {
+    setState((s) => ({
+      ...s,
+      budgets: s.budgets.filter((b) => b.id !== id),
+    }));
+  };
+
   const toggleTheme = () => {
     setState((s) => ({ ...s, isDark: !s.isDark }));
   };
@@ -458,7 +475,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, historySearchTerm: term }));
   };
 
-  const setLang = (lang: 'bn' | 'en') => {
+  const setLang = (lang: 'bn' | 'en' | 'hi') => {
     setState((s) => ({ ...s, lang }));
   };
 
@@ -497,7 +514,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteLoan,
         addSavingsGoal,
         updateSavingsGoal,
+        deleteSavingsGoal,
         setBudget,
+        deleteBudget,
         toggleTheme,
         setHistorySearchTerm,
         setLang,

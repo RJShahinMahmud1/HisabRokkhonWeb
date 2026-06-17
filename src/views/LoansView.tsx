@@ -5,7 +5,7 @@ import { Card, CardContent } from '../components/ui/Card';
 import { Plus, CheckCircle, Clock, Trash2 } from 'lucide-react';
 
 export function LoansView() {
-  const { loans, addLoan, updateLoan, deleteLoan } = useAppStore();
+  const { loans, addLoan, updateLoan, deleteLoan, lang } = useAppStore();
   const [type, setType] = useState<'loan_given' | 'loan_taken'>('loan_given');
   const [personName, setPersonName] = useState('');
   const [amount, setAmount] = useState('');
@@ -13,6 +13,31 @@ export function LoansView() {
   const [note, setNote] = useState('');
 
   const [repayInputs, setRepayInputs] = useState<Record<string, string>>({});
+
+  const t = {
+    loansPage: lang === 'hi' ? 'उधार / ऋण' : lang === 'bn' ? 'ধার / দেনা' : 'Loans / Debts',
+    typeLabel: lang === 'hi' ? 'प्रकार' : lang === 'bn' ? 'ধরন' : 'Type',
+    loanGiven: lang === 'hi' ? 'मैंने किसी को उधार दिया है' : lang === 'bn' ? 'কাউকে ধার দিয়েছি' : 'Loan Given (Leased out)',
+    loanTaken: lang === 'hi' ? 'मैंने किसी से उधार लिया है' : lang === 'bn' ? 'কারো থেকে ধার নিয়েছি' : 'Loan Taken (Borrowed)',
+    personNameLabel: lang === 'hi' ? 'व्यक्ति का नाम' : lang === 'bn' ? 'ব্যক্তির নাম' : 'Person Name',
+    namePlaceholder: lang === 'hi' ? 'नाम' : lang === 'bn' ? 'নাম' : 'Name',
+    amountLabel: lang === 'hi' ? 'मात्रा (৳)' : lang === 'bn' ? 'পরিমাণ (৳)' : 'Amount (৳)',
+    dueDateLabel: lang === 'hi' ? 'वापसी की तारीख (वैकल्पिक)' : lang === 'bn' ? 'ফেরতের তারিখ (ঐচ্ছিক)' : 'Due Date (Optional)',
+    noteLabel: lang === 'hi' ? 'नोट (वैकल्पिक)' : lang === 'bn' ? 'নোট (ঐচ্ছিক)' : 'Note (Optional)',
+    notePlaceholder: lang === 'hi' ? 'विवरण...' : lang === 'bn' ? 'বিস্তারিত...' : 'Details...',
+    addBtn: lang === 'hi' ? 'जोड़ें' : lang === 'bn' ? 'যোগ করুন' : 'Add Loan',
+    currentLoans: lang === 'hi' ? 'वर्तमान उधार / ऋण' : lang === 'bn' ? 'বর্তমান ধার / দেনা' : 'Current Loans / Debts',
+    deleteTitle: lang === 'hi' ? 'हटाएं' : lang === 'bn' ? 'ডিলিট করুন' : 'Delete',
+    iReceive: lang === 'hi' ? 'मुझे मिलेगा' : lang === 'bn' ? 'আমি পাবো' : 'I will receive',
+    iPay: lang === 'hi' ? 'मेरा कर्ज' : lang === 'bn' ? 'আমার কাছে পাবে' : 'I will pay',
+    repaidLabel: lang === 'hi' ? 'भुगतान किया गया: ' : lang === 'bn' ? 'পরিশোধিত: ' : 'Repaid: ',
+    dueLabel: lang === 'hi' ? 'शेष: ' : lang === 'bn' ? 'বাকি: ' : 'Remaining: ',
+    repayPlaceholder: lang === 'hi' ? 'मात्रा' : lang === 'bn' ? 'পরিমাণ' : 'Amount',
+    repayBtn: lang === 'hi' ? 'जमा' : lang === 'bn' ? 'জমা' : 'Repay',
+    clearedText: lang === 'hi' ? 'भुगतान किया' : lang === 'bn' ? 'পরিশোধিত' : 'Cleared',
+    repaidAllLabel: lang === 'hi' ? 'पूर्ण भुगतान' : lang === 'bn' ? 'সম্পূর্ণ পরিশোধিত' : 'Fully Repaid',
+    noLoans: lang === 'hi' ? 'वर्तमान में कोई उधार/ऋण नहीं है' : lang === 'bn' ? 'বর্তমানে কোনো ধার/দেনা নেই' : 'No active loans/debts',
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,38 +86,38 @@ export function LoansView() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">ধার / দেনা</h2>
+      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t.loansPage}</h2>
 
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ধরন</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t.typeLabel}</label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value as any)}
                   className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-blue-500/50 outline-none dark:text-white appearance-none shadow-sm"
                 >
-                  <option value="loan_given">কাউকে ধার দিয়েছি</option>
-                  <option value="loan_taken">কারো থেকে ধার নিয়েছি</option>
+                  <option value="loan_given">{t.loanGiven}</option>
+                  <option value="loan_taken">{t.loanTaken}</option>
                 </select>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ব্যক্তির নাম</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t.personNameLabel}</label>
                 <input
                   type="text"
                   required
                   value={personName}
                   onChange={(e) => setPersonName(e.target.value)}
                   className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-indigo-500/50 outline-none dark:text-white shadow-sm"
-                  placeholder="নাম"
+                  placeholder={t.namePlaceholder}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">পরিমাণ (৳)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t.amountLabel}</label>
                 <input
                   type="number"
                   required
@@ -105,7 +130,7 @@ export function LoansView() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">ফেরতের তারিখ (ঐচ্ছিক)</label>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t.dueDateLabel}</label>
                 <input
                   type="date"
                   value={dueDate}
@@ -116,13 +141,13 @@ export function LoansView() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">নোট (ঐচ্ছিক)</label>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">{t.noteLabel}</label>
               <input
                 type="text"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 className="w-full bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 px-3 sm:px-4 py-2.5 sm:py-3 text-slate-800 focus:ring-2 focus:ring-indigo-500/50 outline-none dark:text-white shadow-sm"
-                placeholder="বিস্তারিত..."
+                placeholder={t.notePlaceholder}
               />
             </div>
 
@@ -131,14 +156,14 @@ export function LoansView() {
               className="w-full flex justify-center items-center py-2.5 sm:py-3 px-3 sm:px-4 rounded-full shadow-md text-sm font-bold text-white transition bg-blue-600 hover:bg-blue-700 shadow-blue-500/20"
             >
               <Plus className="w-5 h-5 mr-2" />
-              যোগ করুন
+              {t.addBtn}
             </button>
           </form>
         </CardContent>
       </Card>
 
       <div className="mt-8">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">বর্তমান ধার / দেনা</h3>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t.currentLoans}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeLoans.length > 0 ? (
             activeLoans.map(loan => (
@@ -148,12 +173,12 @@ export function LoansView() {
                     <div>
                       <div className="flex items-center gap-2">
                         <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{loan.personName}</h4>
-                        <button onClick={() => deleteLoan(loan.id)} className="text-slate-400 hover:text-rose-500 transition-colors" title="ডিলিট করুন">
+                        <button onClick={() => deleteLoan(loan.id)} className="text-slate-400 hover:text-rose-500 transition-colors" title={t.deleteTitle}>
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                       <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {loan.type === 'loan_given' ? 'আমি পাবো' : 'আমার কাছে পাবে'}
+                        {loan.type === 'loan_given' ? t.iReceive : t.iPay}
                       </p>
                       {loan.note && <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{loan.note}</p>}
                     </div>
@@ -164,16 +189,16 @@ export function LoansView() {
                       {loan.dueDate && (
                         <p className="text-xs text-slate-500 flex items-center justify-end mt-1">
                           <Clock className="w-3 h-3 mr-1" />
-                          {new Date(loan.dueDate).toLocaleDateString('bn-BD')}
+                          {new Date(loan.dueDate).toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'bn' ? 'bn-BD' : 'en-US')}
                         </p>
                       )}
                     </div>
                   </div>
                   {loan.repaidAmount > 0 && (
                     <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                      পরিশোধিত: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatBDT(loan.repaidAmount)}</span>
+                      {t.repaidLabel}<span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatBDT(loan.repaidAmount)}</span>
                       <br/>
-                      বাকি: <span className="font-semibold text-rose-600 dark:text-rose-400">{formatBDT(loan.amount - loan.repaidAmount)}</span>
+                      {t.dueLabel}<span className="font-semibold text-rose-600 dark:text-rose-400">{formatBDT(loan.amount - loan.repaidAmount)}</span>
                     </div>
                   )}
                   <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
@@ -181,7 +206,7 @@ export function LoansView() {
                        <input 
                          type="number"
                          min="0"
-                         placeholder="পরিমাণ"
+                         placeholder={t.repayPlaceholder}
                          value={repayInputs[loan.id] || ''}
                          onChange={(e) => setRepayInputs({...repayInputs, [loan.id]: e.target.value})}
                          className="w-24 sm:w-28 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500/50 outline-none dark:text-white"
@@ -191,30 +216,30 @@ export function LoansView() {
                          disabled={!repayInputs[loan.id]}
                          className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 px-3 py-2 rounded-lg transition-colors"
                        >
-                         জমা
+                         {t.repayBtn}
                        </button>
                     </div>
                     <button 
                       onClick={() => markCleared(loan.id)}
                       className="shrink-0 flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 px-3 py-2 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800/30"
-                      title="সম্পূর্ণ পরিশোধিত"
+                      title={t.repaidAllLabel}
                     >
                       <CheckCircle className="w-4 h-4 mr-1 sm:mr-1.5" />
-                      <span className="hidden sm:inline">পরিশোধিত</span>
+                      <span className="hidden sm:inline">{t.clearedText}</span>
                     </button>
                   </div>
                 </CardContent>
               </Card>
             ))
           ) : (
-            <p className="col-span-full text-center text-slate-500 dark:text-slate-400 py-4">বর্তমানে কোনো ধার/দেনা নেই</p>
+            <p className="col-span-full text-center text-slate-500 dark:text-slate-400 py-4">{t.noLoans}</p>
           )}
         </div>
       </div>
       
       {clearedLoans.length > 0 && (
         <div className="mt-8">
-          <h3 className="text-base sm:text-lg font-bold text-slate-500 dark:text-slate-400 mb-4 px-2">পরিশোধিত</h3>
+          <h3 className="text-base sm:text-lg font-bold text-slate-500 dark:text-slate-400 mb-4 px-2">{t.clearedText}</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 opacity-70">
             {clearedLoans.map(loan => (
               <Card key={loan.id}>
@@ -222,7 +247,7 @@ export function LoansView() {
                   <div>
                     <h4 className="font-bold text-slate-900 dark:text-slate-300 line-through">{loan.personName}</h4>
                     <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center mt-1">
-                      <CheckCircle className="w-3 h-3 mr-1" /> পরিশোধিত
+                      <CheckCircle className="w-3 h-3 mr-1" /> {t.clearedText}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
@@ -232,7 +257,7 @@ export function LoansView() {
                     <button
                       onClick={() => deleteLoan(loan.id)}
                       className="p-1.5 text-rose-500 hover:bg-rose-100 dark:hover:bg-rose-900/30 rounded-lg transition"
-                      title="ডিলিট করুন"
+                      title={t.deleteTitle}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>

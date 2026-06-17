@@ -5,18 +5,9 @@
       "description": "Stores the entire application state for a single user as a serialized JSON string to allow offline-first sync.",
       "type": "object",
       "properties": {
-        "userId": {
-          "type": "string",
-          "description": "The UID of the user."
-        },
-        "stateStr": {
-          "type": "string",
-          "description": "A JSON serialized representation of the user's entire app state (transactions, loans, budgets)."
-        },
-        "updatedAt": {
-          "type": "timestamp",
-          "description": "When the state was last synced."
-        }
+        "userId": { "type": "string" },
+        "stateStr": { "type": "string" },
+        "updatedAt": { "type": "timestamp" }
       },
       "required": ["userId", "stateStr", "updatedAt"]
     },
@@ -62,6 +53,67 @@
         "createdAt": { "type": "timestamp" }
       },
       "required": ["conversationId", "senderId", "text", "status", "createdAt"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "A social network post.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "content": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "commentsCount": { "type": "number" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["authorId", "content", "likesCount", "commentsCount", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "A comment on a post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["postId", "authorId", "content", "createdAt"]
+    },
+    "Like": {
+      "title": "Like",
+      "description": "A like on a post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "userId": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["postId", "userId", "createdAt"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "A user following another user.",
+      "type": "object",
+      "properties": {
+        "followerId": { "type": "string" },
+        "followingId": { "type": "string" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["followerId", "followingId", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "A notification for a user.",
+      "type": "object",
+      "properties": {
+        "receiverId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "type": { "type": "string", "enum": ["like", "comment", "follow"] },
+        "postId": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "timestamp" }
+      },
+      "required": ["receiverId", "senderId", "type", "read", "createdAt"]
     }
   },
   "firestore": {
@@ -80,6 +132,26 @@
     "/conversations/{conversationId}/messages/{messageId}": {
       "schema": { "$ref": "#/entities/Message" },
       "description": "Messages inside a conversation"
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Social network posts"
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Comments on a post"
+    },
+    "/posts/{postId}/likes/{likeId}": {
+      "schema": { "$ref": "#/entities/Like" },
+      "description": "Likes on a post"
+    },
+    "/follows/{followId}": {
+      "schema": { "$ref": "#/entities/Follow" },
+      "description": "Follow relationships"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User notifications"
     }
   }
 }
