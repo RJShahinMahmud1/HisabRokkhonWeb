@@ -116,7 +116,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
             <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 rounded-full border-2 border-white dark:border-slate-800"></div>
           </button>
           <div onClick={() => onChangeView('profile')} className="cursor-pointer">
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{lang === 'hi' ? 'नमस्ते' : lang === 'bn' ? 'হাই' : 'Hi'}, {user?.name.split(' ')[0]}!</h2>
+            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">{lang === 'bn' ? 'হাই' : 'Hi'}, {user?.name.split(' ')[0]}!</h2>
             <div className="flex items-center text-xs font-semibold bg-blue-500 text-white px-2.5 py-0.5 rounded-full cursor-pointer mt-0.5 max-w-max">
               {t.accountant} <ChevronDown size={14} className="ml-1 opacity-80" />
             </div>
@@ -132,7 +132,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300">
             {isDark ? <Sun size={24} /> : <Moon size={24} />}
           </button>
-          <button onClick={() => setLang(lang === 'bn' ? 'en' : lang === 'en' ? 'hi' : 'bn')} className="p-2 flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold text-sm">
+          <button onClick={() => setLang(lang === 'bn' ? 'en' : 'bn')} className="p-2 flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold text-sm">
             <Globe size={24} />
             <span className="uppercase">{lang}</span>
           </button>

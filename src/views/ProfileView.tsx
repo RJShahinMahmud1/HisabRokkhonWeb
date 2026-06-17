@@ -10,6 +10,7 @@ import { toggleLike, addPostComment, toggleFollow, subscribeToUserPosts, SocialP
 import { reportPost } from '../lib/adminService';
 import { UserListModal } from '../components/UserListModal';
 import { PostComments } from './social/PostComments';
+import { compressImage } from '../lib/utils';
 
 export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: string | null, onBack?: () => void, onViewProfile?: (uid: string) => void }) {
   const { user, updateProfile, logout, importState } = useAppStore();
@@ -164,39 +165,7 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
     }
   };
 
-  const compressImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
 
-          if (width > height) {
-             if (width > maxWidth) {
-                height = Math.round((height * maxWidth) / width);
-                width = maxWidth;
-             }
-          } else {
-             if (height > maxHeight) {
-                width = Math.round((width * maxHeight) / height);
-                height = maxHeight;
-             }
-          }
-
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx?.drawImage(img, 0, 0, width, height);
-          resolve(canvas.toDataURL('image/jpeg', 0.5));
-        };
-        img.src = e.target?.result as string;
-      };
-      reader.readAsDataURL(file);
-    });
-  };
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -545,7 +514,7 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
                     <div>
                       <h4 className="font-bold text-slate-900 dark:text-white">{displayUser?.name || 'User'}</h4>
                       <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(post.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        {post.createdAt ? new Date(post.createdAt.toMillis ? post.createdAt.toMillis() : post.createdAt).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Just now'}
                       </p>
                     </div>
                   </div>

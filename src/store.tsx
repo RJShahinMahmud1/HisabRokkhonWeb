@@ -21,7 +21,7 @@ export interface State {
   budgets: Budget[];
   isDark: boolean;
   historySearchTerm: string;
-  lang: 'bn' | 'en' | 'hi';
+  lang: 'bn' | 'en';
   posts: Post[];
 }
 
@@ -87,7 +87,7 @@ interface AppContextType extends State {
   deleteBudget: (id: string) => void;
   toggleTheme: () => void;
   setHistorySearchTerm: (term: string) => void;
-  setLang: (lang: 'bn' | 'en' | 'hi') => void;
+  setLang: (lang: 'bn' | 'en') => void;
   importState: (jsonString: string) => boolean;
 }
 
@@ -475,7 +475,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setState((s) => ({ ...s, historySearchTerm: term }));
   };
 
-  const setLang = (lang: 'bn' | 'en' | 'hi') => {
+  const setLang = (lang: 'bn' | 'en') => {
     setState((s) => ({ ...s, lang }));
   };
 
