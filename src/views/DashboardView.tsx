@@ -50,7 +50,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
     loans: lang === 'bn' ? 'উধারি' : 'Loans',
     reports: lang === 'bn' ? 'রিপোর্ট' : 'Reports',
     savings: lang === 'bn' ? 'সঞ্চয়' : 'Savings',
-    profile: lang === 'bn' ? 'প্রোফাইল' : 'Profile',
+    profile: 'SM Social',
     settings: lang === 'bn' ? 'ক্যাটাগরি ম্যানেজমেন্ট' : 'Category Mgmt',
     messages: lang === 'bn' ? 'মেসেজিং' : 'Messaging',
     allTransactions: lang === 'bn' ? 'সব লেনদেন' : 'All Trx',
@@ -187,13 +187,13 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
       </div>
 
       {/* Pills */}
-      <div className="flex gap-3 mb-6 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex flex-wrap gap-2 sm:gap-3 mb-6">
         <button 
           onClick={() => {
             setHistorySearchTerm('');
             onChangeView('history');
           }}
-          className="bg-[#5C9EFC] text-white px-5 sm:px-6 py-2.5 rounded-full text-sm font-bold shadow-md shadow-blue-500/20 whitespace-nowrap"
+          className="bg-[#5C9EFC] text-white px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold shadow-md shadow-blue-500/20 whitespace-nowrap transition-transform active:scale-95 cursor-pointer"
         >
           {t.history}
         </button>
@@ -204,7 +204,7 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
               setHistorySearchTerm(category.name);
               onChangeView('history');
             }}
-            className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-2 border-slate-100 dark:border-slate-700 px-5 sm:px-6 py-2.5 rounded-full text-sm font-bold whitespace-nowrap hover:border-[#5C9EFC] transition-colors"
+            className="bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-2 border-slate-100 dark:border-slate-700 px-4 sm:px-6 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm font-bold whitespace-nowrap hover:border-[#5C9EFC] transition-all-colors active:scale-95 cursor-pointer"
           >
             {category.name}
           </button>
@@ -244,12 +244,14 @@ export function DashboardView({ onChangeView }: { onChangeView: (view: ViewState
           <button 
             key={idx} 
             onClick={() => onChangeView(item.view as ViewState)}
-            className="bg-white dark:bg-slate-800 rounded-[1.5rem] p-3 sm:p-4 py-4 sm:py-5 flex flex-col items-center justify-center gap-2 sm:gap-3 border border-slate-100 dark:border-slate-800 shadow-sm transition-all active:scale-95 text-center h-full hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700"
+            className="group bg-white dark:bg-slate-800 rounded-[1.5rem] p-3 sm:p-4 py-4 sm:py-5 flex flex-col items-center justify-center gap-2 sm:gap-3 border border-slate-100 dark:border-slate-800 shadow-sm transition-all active:scale-95 text-center h-full hover:shadow-md hover:border-slate-200 dark:hover:border-slate-700 cursor-pointer"
           >
-            <div className="w-[44px] sm:w-[50px] h-[44px] sm:h-[50px] rounded-2xl border-[1.5px] border-[#DDF6EE] dark:border-[#DDF6EE]/20 flex items-center justify-center mb-1 bg-transparent shrink-0">
-              {item.icon}
+            <div className="w-[44px] sm:w-[50px] h-[44px] sm:h-[50px] rounded-2xl border-[1.5px] border-[#DDF6EE] dark:border-[#DDF6EE]/25 flex items-center justify-center mb-1 bg-transparent shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/10 group-hover:border-blue-200">
+               <div className="transition-transform duration-300 group-hover:scale-120 group-hover:rotate-[10deg] text-[#32C58F]">
+                  {item.icon}
+               </div>
             </div>
-            <span className="text-[11px] sm:text-[13px] font-bold text-slate-600 dark:text-slate-300 tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis w-full px-1">{item.label}</span>
+            <span className="text-[11px] sm:text-[13px] font-bold text-slate-600 dark:text-slate-300 tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis w-full px-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{item.label}</span>
           </button>
         ))}
       </div>
