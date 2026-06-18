@@ -1,21 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { useAppStore } from '../store';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
-import { Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft, Heart, MessageCircle, UserPlus, UserMinus, MessageSquare, Flag } from 'lucide-react';
+import { ThumbsUp, Camera, Lock, Share2, LogOut, Download, Upload, MapPin, Image as ImageIcon, Send, Trash2, Database, Key, X, ArrowLeft, Heart, MessageCircle, UserPlus, UserMinus, MessageSquare, Flag } from 'lucide-react';
 import { updateUserPassword, db } from '../lib/firebase';
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { ProfileSetupWizard } from '../components/ProfileSetupWizard';
 import { PublicProfile } from '../lib/chatService';
-import { toggleLike, addPostComment, toggleFollow, subscribeToUserPosts, SocialPost, createPost, deletePost as deleteSocialPost } from '../lib/socialService';
+import { subscribeToUserReactions, toggleLike, addPostComment, toggleFollow, subscribeToUserPosts, SocialPost, createPost, deletePost as deleteSocialPost } from '../lib/socialService';
 import { reportPost } from '../lib/adminService';
 import { UserListModal } from '../components/UserListModal';
+import { ReactionsListModal } from '../components/ReactionsListModal';
 import { PostComments } from './social/PostComments';
 import { compressImage } from '../lib/utils';
 
 export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: string | null, onBack?: () => void, onViewProfile?: (uid: string) => void }) {
-  const { user, updateProfile, logout, importState } = useAppStore();
+  const { user, updateProfile, logout, importState, lang } = useAppStore();
+  const [showReactionsForPostId, setShowReactionsForPostId] = useState<string | null>(null);
 
   const isOwnProfile = !profileId || profileId === user?.id;
+  const [userReactions, setUserReactions] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const unsub = subscribeToUserReactions(user.id, (reactions) => {
+      setUserReactions(reactions);
+    });
+    return () => unsub();
+  }, [user?.id]);
+
+  const handleSetReaction = async (postId: string, authorId: string, type: 'like'|'love'|'wow'|'haha'|'angry') => {
+    if (!user) return;
+    await toggleLike(postId, user.id, authorId, type);
+  };
+
 
   const [publicUser, setPublicUser] = useState<any>(null);
   const [loadingPublic, setLoadingPublic] = useState(true);
@@ -548,30 +565,64 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
                 )}
                 
                 {/* Interactions */}
-                <div className="border-t border-slate-200 dark:border-slate-700 pt-3 mt-3">
-                    <div className="flex items-center gap-4 text-sm text-slate-500 mb-3 px-2">
-                        <span className="flex items-center gap-1.5"><Heart className="w-4 h-4 text-rose-500" /> {post.likesCount || 0}</span>
-                        <span className="flex items-center gap-1.5"><MessageSquare className="w-4 h-4 text-blue-500" /> {post.commentsCount || 0}</span>
-                    </div>
+                 <div className="border-t border-slate-200 dark:border-slate-800 mt-2 select-none">
+                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 pb-2 px-2 border-b border-slate-200 dark:border-slate-800 select-none">
+                         <div className="flex items-center gap-1.5">
+                             {post.likesCount > 0 ? (
+                                 <div className="flex items-center">
+                                     <div className="flex -space-x-1 mr-1.5">
+                                         <div className="w-5 h-5 rounded-full bg-blue-500 flex items-center justify-center text-[10px] text-white shadow-sm border border-white dark:border-slate-900 z-[3]">👍</div>
+                                         <div className="w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] text-white shadow-sm border border-white dark:border-slate-900 z-[2]">❤️</div>
+                                         <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center text-[10px] text-white shadow-sm border border-white dark:border-slate-900 z-[1]">😲</div>
+                                     </div>
+                                     <span className="font-bold text-slate-700 dark:text-slate-300">{post.likesCount}</span>
+                                 </div>
+                             ) : (
+                                 <div className="flex items-center gap-1 text-slate-400">
+                                     <span>👍</span>
+                                     <span className="font-bold">0</span>
+                                 </div>
+                             )}
+                         </div>
+                         <div className="font-bold text-slate-500 dark:text-slate-400">
+                             {post.commentsCount || 0} {lang === 'bn' ? 'কমেন্ট' : 'comments'}
+                         </div>
+                     </div>
 
-                    <div className="flex gap-2">
-                        <button 
-                            onClick={() => handleToggleLike(post.id)}
-                            className={`flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800`}
-                        >
-                            <Heart className="w-5 h-5" /> Like
-                        </button>
-                        <button 
-                            onClick={() => setShowCommentsFor(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
-                            className="flex items-center gap-2 flex-1 justify-center py-2.5 rounded-xl transition font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                            <MessageSquare className="w-5 h-5" />
-                            <span>Comment</span>
-                        </button>
-                    </div>
-
-                    {showCommentsFor[post.id] && (
-                        <PostComments postId={post.id} postAuthorId={activeProfileId || user?.id || ''} />
+                     <div className="flex gap-2 pt-2 pb-2 select-none px-1">
+                         <div className="relative group flex-1">
+                             <div className="absolute bottom-full left-0 mb-2 w-max hidden group-hover:flex bg-white dark:bg-slate-800 shadow-[0_4px_24px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1.5 border border-slate-200 dark:border-slate-700 z-10 transition-all duration-200 scale-100 origin-bottom">
+                                 <button onClick={() => handleSetReaction(post.id, activeProfileId, 'like')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="profile_react_btn_like">👍</button>
+                                 <button onClick={() => handleSetReaction(post.id, activeProfileId, 'love')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="profile_react_btn_love">❤️</button>
+                                 <button onClick={() => handleSetReaction(post.id, activeProfileId, 'wow')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="profile_react_btn_wow">😲</button>
+                                 <button onClick={() => handleSetReaction(post.id, activeProfileId, 'haha')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="profile_react_btn_haha">😂</button>
+                                 <button onClick={() => handleSetReaction(post.id, activeProfileId, 'angry')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="profile_react_btn_angry">😡</button>
+                             </div>
+                             <button 
+                                 onClick={() => handleSetReaction(post.id, activeProfileId, 'like')}
+                                 className={`w-full flex justify-center items-center gap-2 py-2 px-4 rounded-full transition-all font-bold text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/50 dark:border-slate-700/50 shadow-sm ${userReactions[post.id] === 'love' ? 'text-rose-500' : userReactions[post.id] ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300'}`}
+                                 id="profile_like_pill_btn"
+                             >
+                                 {userReactions[post.id] === 'like' && <span className="text-base select-none">👍</span>}
+                                 {userReactions[post.id] === 'love' && <span className="text-base select-none">❤️</span>}
+                                 {userReactions[post.id] === 'wow' && <span className="text-base select-none">😲</span>}
+                                 {userReactions[post.id] === 'haha' && <span className="text-base select-none">😂</span>}
+                                 {userReactions[post.id] === 'angry' && <span className="text-base select-none">😡</span>}
+                                 {!userReactions[post.id] && <ThumbsUp className="w-4 h-4 text-slate-500 dark:text-slate-400" />}
+                                 <span>{post.likesCount || 0}</span>
+                             </button>
+                         </div>
+                         <button 
+                             onClick={() => setShowCommentsFor(prev => ({ ...prev, [post.id]: !prev[post.id] }))}
+                             className="flex-1 flex justify-center items-center gap-2 py-2 px-4 rounded-full transition-all font-bold text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/50 dark:border-slate-700/50 text-slate-600 dark:text-slate-300 shadow-sm"
+                             id="profile_comment_pill_btn"
+                         >
+                             <MessageSquare className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                             <span>{post.commentsCount || 0}</span>
+                         </button>
+                     </div>
+                 {showCommentsFor[post.id] && (
+                        <PostComments postId={post.id} postAuthorId={activeProfileId || user?.id || ''} onUserClick={onViewProfile} />
                     )}
                 </div>
               </CardContent>
@@ -660,6 +711,14 @@ export function ProfileView({ profileId, onBack, onViewProfile }: { profileId?: 
         />
       )}
       
+      {showReactionsForPostId && (
+        <ReactionsListModal 
+          postId={showReactionsForPostId}
+          onClose={() => setShowReactionsForPostId(null)}
+          onUserClick={onViewProfile}
+        />
+      )}
+
       {/* Edit Profile Modal */}
       {showEditModal && (
         <div className="fixed inset-0 z-[150] flex flex-col justify-end sm:items-center sm:justify-center bg-slate-900/40 backdrop-blur-sm sm:p-4">

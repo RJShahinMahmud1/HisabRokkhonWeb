@@ -1,23 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Flag, Users as UsersIcon, MessageSquareOff, Trash2, Ban, CheckCircle, XCircle } from 'lucide-react';
-import { fetchReports, fetchUsersList, dismissReport, resolveReport, deletePostByAdmin, setUserBanStatus, setUserMessageStatus } from '../lib/adminService';
+import { Shield, Flag, Users as UsersIcon, MessageSquareOff, Trash2, Ban, CheckCircle, XCircle, FileText } from 'lucide-react';
+import { fetchReports, fetchUsersList, fetchAllPosts, dismissReport, resolveReport, deletePostByAdmin, setUserBanStatus, setUserMessageStatus } from '../lib/adminService';
 import { useAppStore } from '../store';
 
 export function AdminView() {
   const { lang } = useAppStore();
-  const [activeTab, setActiveTab] = useState<'reports' | 'users'>('reports');
+  const [activeTab, setActiveTab] = useState<'reports' | 'users' | 'posts'>('reports');
   const [reports, setReports] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     setLoading(true);
-    const [fetchedReports, fetchedUsers] = await Promise.all([
+    const [fetchedReports, fetchedUsers, fetchedPosts] = await Promise.all([
         fetchReports(),
-        fetchUsersList()
+        fetchUsersList(),
+        fetchAllPosts()
     ]);
     setReports(fetchedReports);
     setUsers(fetchedUsers);
+    setPosts(fetchedPosts);
     setLoading(false);
   };
 
@@ -34,6 +37,13 @@ export function AdminView() {
       await deletePostByAdmin(report.postOwnerId, report.postId);
       await resolveReport(report.id);
       loadData();
+  };
+
+  const handleDeletePost = async (authorId: string, postId: string) => {
+      if (window.confirm('Are you sure you want to delete this post?')) {
+          await deletePostByAdmin(authorId, postId);
+          loadData();
+      }
   };
 
   const handleToggleBan = async (user: any) => {
@@ -68,6 +78,14 @@ export function AdminView() {
         >
           <div className="flex items-center justify-center gap-2">
             <UsersIcon className="w-4 h-4" /> Users
+          </div>
+        </button>
+        <button
+          onClick={() => setActiveTab('posts')}
+          className={`flex-1 py-2 text-sm font-semibold rounded-lg transition ${activeTab === 'posts' ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+        >
+          <div className="flex items-center justify-center gap-2">
+            <FileText className="w-4 h-4" /> Posts
           </div>
         </button>
       </div>
@@ -110,6 +128,36 @@ export function AdminView() {
               ))}
               {reports.filter(r => r.status === 'pending').length === 0 && (
                   <div className="text-center py-10 opacity-50 dark:text-white font-medium">No pending reports.</div>
+              )}
+          </div>
+      ) : activeTab === 'posts' ? (
+          <div className="space-y-4">
+              {posts.map((post) => (
+                  <div key={post.id} className="bg-white dark:bg-slate-800 p-5 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-3 mb-4">
+                          <img src={post.authorAvatar || 'https://via.placeholder.com/40'} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                          <div>
+                              <p className="font-semibold text-slate-900 dark:text-white">{post.authorName}</p>
+                              <p className="text-xs text-slate-500">{post.authorEmail} • {new Date(post.createdAt || Date.now()).toLocaleDateString()}</p>
+                          </div>
+                          <div className="ml-auto flex gap-2">
+                              <button 
+                                  onClick={() => handleDeletePost(post.authorId, post.id)}
+                                  className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/30 p-2 rounded-lg transition"
+                                  title="Delete Post"
+                              >
+                                  <Trash2 className="w-5 h-5" />
+                              </button>
+                          </div>
+                      </div>
+                      <p className="text-slate-800 dark:text-slate-200">{post.content}</p>
+                      {post.imageUrl && (
+                          <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-xl max-h-96 object-cover" />
+                      )}
+                  </div>
+              ))}
+              {posts.length === 0 && (
+                  <div className="text-center py-10 opacity-50 dark:text-white font-medium">No posts found.</div>
               )}
           </div>
       ) : (

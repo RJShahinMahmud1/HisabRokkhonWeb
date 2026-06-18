@@ -15,6 +15,11 @@ export function SMSocialView({ initialProfileId, onViewProfile }: { initialProfi
     }
   }, [initialProfileId]);
 
+  const handleSelectProfile = (uid: string) => {
+    setActiveTab('profile');
+    onViewProfile?.(uid);
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-hidden shadow-xl sm:rounded-2xl w-full">
       {/* Top Navigation Bar - FB Lite Style */}
@@ -53,11 +58,11 @@ export function SMSocialView({ initialProfileId, onViewProfile }: { initialProfi
 
       <div className="flex-1 overflow-y-auto w-full">
         <div className="max-w-2xl mx-auto w-full min-h-full">
-            {activeTab === 'newsfeed' && <NewsfeedView />}
-            {activeTab === 'followers' && <FollowersView />}
-            {activeTab === 'messages' && <MessengerView onBack={() => setActiveTab('newsfeed')} onViewProfile={(uid) => { setActiveTab('profile'); onViewProfile?.(uid); }} />}
-            {activeTab === 'notifications' && <NotificationsView />}
-            {activeTab === 'profile' && <ProfileView profileId={initialProfileId} onBack={() => setActiveTab('newsfeed')} onViewProfile={(uid) => { onViewProfile?.(uid); setActiveTab('profile'); }} />}
+            {activeTab === 'newsfeed' && <NewsfeedView onViewProfile={handleSelectProfile} />}
+            {activeTab === 'followers' && <FollowersView onViewProfile={handleSelectProfile} />}
+            {activeTab === 'messages' && <MessengerView onBack={() => setActiveTab('newsfeed')} onViewProfile={handleSelectProfile} />}
+            {activeTab === 'notifications' && <NotificationsView onViewProfile={handleSelectProfile} />}
+            {activeTab === 'profile' && <ProfileView profileId={initialProfileId} onBack={() => setActiveTab('newsfeed')} onViewProfile={handleSelectProfile} />}
         </div>
       </div>
     </div>

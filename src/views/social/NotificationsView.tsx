@@ -5,7 +5,7 @@ import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Bell, Heart, MessageSquare, UserPlus } from 'lucide-react';
 
-export function NotificationsView() {
+export function NotificationsView({ onViewProfile }: { onViewProfile?: (uid: string) => void }) {
   const { user, lang } = useAppStore();
   const [notifications, setNotifications] = useState<any[]>([]);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
@@ -66,7 +66,7 @@ export function NotificationsView() {
               className={`flex items-start gap-4 p-4 rounded-2xl cursor-pointer transition ${isRead ? 'bg-slate-50 dark:bg-slate-900/40' : 'bg-blue-50 dark:bg-blue-900/30'}`}
             >
                <div className="relative shrink-0">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                  <div onClick={(e) => { e.stopPropagation(); onViewProfile?.(n.senderId); }} className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 cursor-pointer hover:opacity-90 transition-opacity">
                      {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover"/> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">{profile?.name?.[0]}</div>}
                   </div>
                   <div className="absolute -bottom-1 -right-1 bg-white dark:bg-slate-950 rounded-full p-1 border-2 border-white dark:border-slate-950">
@@ -75,7 +75,7 @@ export function NotificationsView() {
                </div>
                <div className="flex-1">
                   <p className="text-sm text-slate-800 dark:text-gray-200">
-                     <span className="font-bold">{profile?.name || 'User'}</span> {text}
+                     <span onClick={(e) => { e.stopPropagation(); onViewProfile?.(n.senderId); }} className="font-bold hover:underline cursor-pointer text-slate-950 dark:text-white">{profile?.name || 'User'}</span> {text}
                   </p>
                   <p className="text-xs text-slate-500 mt-1">{timeStr}</p>
                </div>

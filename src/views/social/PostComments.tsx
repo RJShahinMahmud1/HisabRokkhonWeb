@@ -5,7 +5,7 @@ import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { Send, X } from 'lucide-react';
 
-export function PostComments({ postId, postAuthorId }: { postId: string, postAuthorId: string }) {
+export function PostComments({ postId, postAuthorId, onUserClick }: { postId: string, postAuthorId: string, onUserClick?: (uid: string) => void }) {
     const { user, lang } = useAppStore();
     const [comments, setComments] = useState<any[]>([]);
     const [newComment, setNewComment] = useState('');
@@ -49,12 +49,20 @@ export function PostComments({ postId, postAuthorId }: { postId: string, postAut
         const profile = profiles[comment.authorId];
         return (
             <div key={comment.id} className={`flex gap-2 text-sm ${isReply ? 'ml-10 mt-2' : 'mt-4'}`}>
-                <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                <div 
+                    onClick={() => onUserClick?.(comment.authorId)}
+                    className={`w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0 ${onUserClick ? 'cursor-pointer hover:opacity-90 transition-opacity' : ''}`}
+                >
                     {profile?.avatarUrl ? <img src={profile.avatarUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex justify-center items-center font-bold text-slate-400">{profile?.name?.[0]}</div>}
                 </div>
                 <div className="flex-1">
                     <div className="bg-slate-100 dark:bg-slate-900 rounded-2xl rounded-tl-sm px-4 py-2 inline-block max-w-full">
-                        <span className="font-semibold block text-slate-900 dark:text-white text-[13px] mb-0.5">{profile?.name || 'User'}</span>
+                        <span 
+                            onClick={() => onUserClick?.(comment.authorId)}
+                            className={`font-semibold block text-slate-900 dark:text-white text-[13px] mb-0.5 ${onUserClick ? 'cursor-pointer hover:underline' : ''}`}
+                        >
+                            {profile?.name || 'User'}
+                        </span>
                         <p className="text-slate-700 dark:text-slate-300 break-words">{comment.content}</p>
                     </div>
                     {!isReply && (

@@ -7,6 +7,30 @@
     <link rel="icon" type="image/png" href="/logo.png" />
     <link rel="apple-touch-icon" href="/logo.png" />
     <link rel="manifest" href="/manifest.json" />
+    <script>
+      (function() {
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const shouldSuppress = function(arg) {
+          if (!arg) return false;
+          const str = typeof arg === 'string' ? arg : String(arg);
+          return str.indexOf('Detected an update time that is in the future') !== -1 ||
+                 str.indexOf('update time that is in the future') !== -1;
+        };
+        console.error = function() {
+          for (let i = 0; i < arguments.length; i++) {
+            if (shouldSuppress(arguments[i])) return;
+          }
+          originalError.apply(console, arguments);
+        };
+        console.warn = function() {
+          for (let i = 0; i < arguments.length; i++) {
+            if (shouldSuppress(arguments[i])) return;
+          }
+          originalWarn.apply(console, arguments);
+        };
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

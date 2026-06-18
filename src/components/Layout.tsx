@@ -15,14 +15,16 @@ import {
 import { useAppStore } from '../store';
 import { ViewState } from '../types';
 import { cn } from '../lib/utils';
+import { motion } from 'motion/react';
 
 interface LayoutProps {
   children: React.ReactNode;
   currentView: ViewState;
   onViewChange: (view: ViewState) => void;
+  onViewProfile?: (uid: string) => void;
 }
 
-export function Layout({ children, currentView, onViewChange }: LayoutProps) {
+export function Layout({ children, currentView, onViewChange, onViewProfile }: LayoutProps) {
   const { user, logout, isDark, lang } = useAppStore();
 
   if (!user) return <>{children}</>;
@@ -48,6 +50,7 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
     { id: 'expense', label: t.expense, icon: <CreditCard size={18} /> },
     { id: 'loans', label: t.loans, icon: <BookOpen size={18} /> },
     { id: 'savings', label: t.savings, icon: <PiggyBank size={18} /> },
+    { id: 'messages', label: t.messages, icon: <MessageCircle size={18} /> },
     { id: 'budget', label: t.budget, icon: <PieChart size={18} /> },
     { id: 'reports', label: t.reports, icon: <PieChart size={18} /> },
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
@@ -110,54 +113,97 @@ export function Layout({ children, currentView, onViewChange }: LayoutProps) {
         </div>
         <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none">
           <nav className="space-y-2">
-            {menuItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => onViewChange(item.id)}
-                className={cn(
-                  "flex items-center w-full px-3 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-all relative group",
-                  currentView === item.id 
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                    : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                )}
-              >
-                <div className="transition-transform duration-300 group-hover:scale-125 group-hover:rotate-[8deg] shrink-0">
-                  {item.icon}
-                </div>
-                <span className="ml-3 transition-colors duration-200 group-hover:text-blue-500 dark:group-hover:text-blue-400 group-[.text-white]:group-hover:text-white">{item.label}</span>
-                {item.id === 'messages' && totalUnread > 0 && (
-                   <span className="absolute right-3 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
-                       {totalUnread > 99 ? '99+' : totalUnread}
-                   </span>
-                )}
-              </button>
-            ))}
+            {menuItems.map((item) => {
+              if (item.id === 'messages') {
+                return (
+                  <motion.button
+                    whileHover={{ x: 4, scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    key={item.id}
+                    onClick={() => onViewChange('messages')}
+                    className={cn(
+                      "flex items-center w-full px-3 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-all relative group overflow-hidden z-10",
+                      currentView === item.id 
+                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
+                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                    )}
+                  >
+                    <motion.div
+                      whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.15 }}
+                      transition={{ duration: 0.4 }}
+                      className="shrink-0"
+                    >
+                      {item.icon}
+                    </motion.div>
+                    <span className="ml-3 transition-colors duration-200 group-[.text-white]:group-hover:text-white">{item.label}</span>
+                    {totalUnread > 0 && (
+                       <span className="absolute right-3 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
+                           {totalUnread > 99 ? '99+' : totalUnread}
+                       </span>
+                    )}
+                  </motion.button>
+                );
+              }
+              return (
+                <motion.button
+                  whileHover={{ x: 4, scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  key={item.id}
+                  onClick={() => onViewChange(item.id)}
+                  className={cn(
+                    "flex items-center w-full px-3 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-all relative group overflow-hidden z-10",
+                    currentView === item.id 
+                      ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
+                      : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800 border border-transparent hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.05)] dark:hover:shadow-[0_4px_12px_-4px_rgba(0,0,0,0.2)]"
+                  )}
+                >
+                  <motion.div
+                    whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.15 }}
+                    transition={{ duration: 0.4 }}
+                    className="shrink-0"
+                  >
+                    {item.icon}
+                  </motion.div>
+                  <span className="ml-3 transition-colors duration-200 group-[.text-white]:group-hover:text-white">{item.label}</span>
+                </motion.button>
+              );
+            })}
           </nav>
         </div>
         
-        <button onClick={() => onViewChange('profile')} className="mt-auto p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-slate-200 dark:hover:bg-slate-700 transition w-full group relative">
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">SM Social</p>
-            {totalUnread > 0 && (
-              <span className="w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
-                  {totalUnread > 99 ? '99+' : totalUnread}
-              </span>
-            )}
-          </div>
-          <div className="flex items-center gap-3 mb-2">
-             <div className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-blue-200 dark:bg-blue-800 border-2 border-white dark:border-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden">
-               {user.avatarUrl ? (
-                 <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
-               ) : (
-                 <UserIcon size={20} className="text-blue-600 dark:text-blue-300"/>
-               )}
-             </div>
-             <div className="overflow-hidden">
-               <p className="text-sm font-bold truncate text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user.name}</p>
-               <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
-             </div>
-          </div>
-       </button>
+        <div className="mt-auto">
+          <motion.button 
+            whileHover={{ scale: 1.02, y: -2 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => onViewProfile?.(user.id)} 
+            className="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-slate-200 dark:hover:bg-slate-700 transition-all w-full group relative block cursor-pointer shadow-sm hover:shadow-md"
+          >
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">SM Social</p>
+              {totalUnread > 0 && (
+                <span className="w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                  </span>
+                )}
+            </div>
+            <div className="flex items-center gap-3">
+               <motion.div
+                 whileHover={{ rotate: 10, scale: 1.1 }}
+                 className="w-9 sm:w-10 h-9 sm:h-10 rounded-full bg-blue-200 dark:bg-blue-800 border-2 border-white dark:border-slate-800 flex items-center justify-center flex-shrink-0 overflow-hidden shadow-inner"
+               >
+                 {user.avatarUrl ? (
+                   <img src={user.avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                 ) : (
+                   <UserIcon size={20} className="text-blue-600 dark:text-blue-300"/>
+                 )}
+               </motion.div>
+               <div className="overflow-hidden">
+                 <p className="text-sm font-bold truncate text-slate-800 dark:text-slate-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{user.name}</p>
+                 <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">{user.email}</p>
+               </div>
+            </div>
+          </motion.button>
+        </div>
      </aside>
 
       {/* Main Content */}

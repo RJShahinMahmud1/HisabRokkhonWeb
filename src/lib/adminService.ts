@@ -27,6 +27,29 @@ export const fetchReports = async () => {
     }
 };
 
+export const fetchAllPosts = async () => {
+    try {
+        const snap = await getDocs(collection(db, 'publicProfiles'));
+        let allPosts: any[] = [];
+        snap.forEach(doc => {
+            const data = doc.data();
+            if (data.posts && Array.isArray(data.posts)) {
+                const userPosts = data.posts.map((p: any) => ({
+                    ...p,
+                    authorName: data.name,
+                    authorAvatar: data.avatarUrl,
+                    authorEmail: data.email
+                }));
+                allPosts = [...allPosts, ...userPosts];
+            }
+        });
+        return allPosts.sort((a, b) => b.createdAt - a.createdAt);
+    } catch (error) {
+        console.error('Error fetching all posts:', error);
+        return [];
+    }
+};
+
 export const fetchUsersList = async () => {
     try {
         const snap = await getDocs(collection(db, 'publicProfiles'));

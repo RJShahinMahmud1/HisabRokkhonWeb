@@ -55,7 +55,7 @@ function AppContent() {
 
   const renderView = () => {
     switch (currentView) {
-      case 'dashboard': return <DashboardView onChangeView={setCurrentView} />;
+      case 'dashboard': return <DashboardView onChangeView={setCurrentView} onViewProfile={handleViewProfile} />;
       case 'income': return <TransactionView type="income" />;
       case 'expense': return <TransactionView type="expense" />;
       case 'loans': return <LoansView />;
@@ -67,12 +67,12 @@ function AppContent() {
       case 'admin': return <AdminView />;
       case 'profile': return <SMSocialView initialProfileId={viewingProfileId} onViewProfile={handleViewProfile} />;
       case 'messages': return <MessengerView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
-      default: return <DashboardView onChangeView={setCurrentView} />;
+      default: return <DashboardView onChangeView={setCurrentView} onViewProfile={handleViewProfile} />;
     }
   };
 
   return (
-    <Layout currentView={currentView} onViewChange={setCurrentView}>
+    <Layout currentView={currentView} onViewChange={setCurrentView} onViewProfile={handleViewProfile}>
       {renderView()}
     </Layout>
   );

@@ -5,7 +5,7 @@ import { db } from '../../lib/firebase';
 import { toggleFollow } from '../../lib/socialService';
 import { Users, UserPlus, UserCheck } from 'lucide-react';
 
-export function FollowersView() {
+export function FollowersView({ onViewProfile }: { onViewProfile?: (uid: string) => void }) {
   const { user, lang } = useAppStore();
   const [activeTab, setActiveTab] = useState<'followers' | 'following' | 'discover'>('discover');
   const [profileData, setProfileData] = useState<any>(null);
@@ -87,12 +87,12 @@ export function FollowersView() {
 
            return (
              <div key={u.id} className="flex items-center justify-between p-3 border border-slate-100 dark:border-slate-800 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 transition">
-                <div className="flex items-center gap-3">
-                   <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800">
+                 <div onClick={() => onViewProfile?.(u.id)} className="flex items-center gap-3 cursor-pointer group">
+                   <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 group-hover:opacity-95 transition-opacity dark:bg-slate-800">
                       {u.avatarUrl ? <img src={u.avatarUrl} alt="" className="w-full h-full object-cover"/> : <Users className="w-6 h-6 text-slate-400 m-3" />}
                    </div>
                    <div>
-                      <h4 className="font-bold text-slate-900 dark:text-white">{u.name}</h4>
+                      <h4 className="font-bold text-slate-900 dark:text-white group-hover:underline">{u.name}</h4>
                       <p className="text-xs text-slate-500">{u.designation || 'No designation'}</p>
                    </div>
                 </div>
