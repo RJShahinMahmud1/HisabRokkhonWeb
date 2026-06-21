@@ -50,7 +50,6 @@ export function Layout({ children, currentView, onViewChange, onViewProfile }: L
     { id: 'expense', label: t.expense, icon: <CreditCard size={18} /> },
     { id: 'loans', label: t.loans, icon: <BookOpen size={18} /> },
     { id: 'savings', label: t.savings, icon: <PiggyBank size={18} /> },
-    { id: 'messages', label: t.messages, icon: <MessageCircle size={18} /> },
     { id: 'budget', label: t.budget, icon: <PieChart size={18} /> },
     { id: 'reports', label: t.reports, icon: <PieChart size={18} /> },
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
@@ -113,38 +112,7 @@ export function Layout({ children, currentView, onViewChange, onViewProfile }: L
         </div>
         <div className="flex-1 overflow-y-auto scroll-smooth overscroll-none">
           <nav className="space-y-2">
-            {menuItems.map((item) => {
-              if (item.id === 'messages') {
-                return (
-                  <motion.button
-                    whileHover={{ x: 4, scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    key={item.id}
-                    onClick={() => onViewChange('messages')}
-                    className={cn(
-                      "flex items-center w-full px-3 py-2.5 sm:py-3 text-sm font-medium rounded-xl transition-all relative group overflow-hidden z-10",
-                      currentView === item.id 
-                        ? "bg-blue-600 text-white shadow-md shadow-blue-500/20" 
-                        : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-                    )}
-                  >
-                    <motion.div
-                      whileHover={{ rotate: [0, -10, 10, -5, 5, 0], scale: 1.15 }}
-                      transition={{ duration: 0.4 }}
-                      className="shrink-0"
-                    >
-                      {item.icon}
-                    </motion.div>
-                    <span className="ml-3 transition-colors duration-200 group-[.text-white]:group-hover:text-white">{item.label}</span>
-                    {totalUnread > 0 && (
-                       <span className="absolute right-3 w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
-                           {totalUnread > 99 ? '99+' : totalUnread}
-                       </span>
-                    )}
-                  </motion.button>
-                );
-              }
-              return (
+            {menuItems.map((item) => (
                 <motion.button
                   whileHover={{ x: 4, scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -166,8 +134,7 @@ export function Layout({ children, currentView, onViewChange, onViewProfile }: L
                   </motion.div>
                   <span className="ml-3 transition-colors duration-200 group-[.text-white]:group-hover:text-white">{item.label}</span>
                 </motion.button>
-              );
-            })}
+            ))}
           </nav>
         </div>
         

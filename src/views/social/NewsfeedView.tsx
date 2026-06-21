@@ -20,6 +20,29 @@ export function NewsfeedView({ onViewProfile }: { onViewProfile?: (userId: strin
   const [userReactions, setUserReactions] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
+  const [activeReactionPostId, setActiveReactionPostId] = useState<string | null>(null);
+  const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+
+  const handleReactionTouchStart = (postId: string) => {
+    timerRef.current = setTimeout(() => {
+      setActiveReactionPostId(postId);
+    }, 400); // 400ms long press
+  };
+
+  const handleReactionTouchEnd = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalClick = () => {
+      if (activeReactionPostId) setActiveReactionPostId(null);
+    };
+    window.addEventListener('click', handleGlobalClick);
+    return () => window.removeEventListener('click', handleGlobalClick);
+  }, [activeReactionPostId]);
+
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [matchingUsers, setMatchingUsers] = useState<PublicProfile[]>([]);
@@ -131,6 +154,7 @@ export function NewsfeedView({ onViewProfile }: { onViewProfile?: (userId: strin
 
   const handleSetReaction = async (postId: string, authorId: string, type: 'like'|'love'|'wow'|'haha'|'angry') => {
     if (!user) return;
+    setActiveReactionPostId(null);
     await toggleLike(postId, user.id, authorId, type);
   };
 
@@ -365,15 +389,31 @@ export function NewsfeedView({ onViewProfile }: { onViewProfile?: (userId: strin
 
                 <div className="flex gap-2 pt-2 px-3 pb-2 select-none">
                     <div className="relative group flex-1">
-                        <div className="absolute bottom-full left-0 mb-2 w-max hidden group-hover:flex bg-white dark:bg-slate-800 shadow-[0_4px_24px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1.5 border border-slate-200 dark:border-slate-700 z-10 transition-all duration-200 scale-100 origin-bottom">
-                            <button onClick={() => handleSetReaction(post.id, post.authorId, 'like')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_like">👍</button>
-                            <button onClick={() => handleSetReaction(post.id, post.authorId, 'love')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_love">❤️</button>
-                            <button onClick={() => handleSetReaction(post.id, post.authorId, 'wow')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_wow">😲</button>
-                            <button onClick={() => handleSetReaction(post.id, post.authorId, 'haha')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_haha">😂</button>
-                            <button onClick={() => handleSetReaction(post.id, post.authorId, 'angry')} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_angry">😡</button>
+                        <div className={`absolute bottom-full left-0 mb-2 w-max ${activeReactionPostId === post.id ? 'flex' : 'hidden group-hover:flex'} bg-white dark:bg-slate-800 shadow-[0_4px_24px_rgba(0,0,0,0.15)] rounded-full px-2 py-1 gap-1.5 border border-slate-200 dark:border-slate-700 z-10 transition-all duration-200 scale-100 origin-bottom`}>
+                            <button onClick={(e) => { e.stopPropagation(); handleSetReaction(post.id, post.authorId, 'like'); }} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_like">👍</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleSetReaction(post.id, post.authorId, 'love'); }} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_love">❤️</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleSetReaction(post.id, post.authorId, 'wow'); }} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_wow">😲</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleSetReaction(post.id, post.authorId, 'haha'); }} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_haha">😂</button>
+                            <button onClick={(e) => { e.stopPropagation(); handleSetReaction(post.id, post.authorId, 'angry'); }} className="p-1.5 hover:scale-130 hover:-translate-y-1.5 transition-all text-2xl" id="react_btn_angry">😡</button>
                         </div>
                         <button 
-                            onClick={() => handleSetReaction(post.id, post.authorId, 'like')}
+                            onTouchStart={() => handleReactionTouchStart(post.id)}
+                            onTouchEnd={handleReactionTouchEnd}
+                            onTouchCancel={handleReactionTouchEnd}
+                            onContextMenu={(e) => {
+                                if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) {
+                                    e.preventDefault();
+                                }
+                            }}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (activeReactionPostId === post.id) {
+                                    setActiveReactionPostId(null);
+                                    e.preventDefault();
+                                    return;
+                                }
+                                handleSetReaction(post.id, post.authorId, 'like');
+                            }}
                             className={`w-full flex justify-center items-center gap-2 py-2 px-4 rounded-full transition-all font-bold text-sm bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/50 dark:border-slate-700/50 shadow-sm ${userReactions[post.id] === 'love' ? 'text-rose-500' : userReactions[post.id] ? 'text-blue-600 dark:text-blue-400' : 'text-slate-600 dark:text-slate-300'}`}
                             id="like_pill_btn"
                         >

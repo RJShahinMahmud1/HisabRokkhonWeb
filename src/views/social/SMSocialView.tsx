@@ -7,7 +7,7 @@ import { FollowersView } from './FollowersView';
 import { NotificationsView } from './NotificationsView';
 
 export function SMSocialView({ initialProfileId, onViewProfile }: { initialProfileId?: string | null, onViewProfile?: (uid: string) => void }) {
-  const [activeTab, setActiveTab] = useState<'newsfeed' | 'followers' | 'messages' | 'notifications' | 'profile'>('newsfeed');
+  const [activeTab, setActiveTab] = useState<'newsfeed' | 'followers' | 'notifications' | 'profile'>('newsfeed');
 
   useEffect(() => {
     if (initialProfileId) {
@@ -37,12 +37,6 @@ export function SMSocialView({ initialProfileId, onViewProfile }: { initialProfi
           <Users className={`w-6 h-6 ${activeTab === 'followers' ? 'fill-current' : ''}`} />
         </button>
         <button 
-          onClick={() => setActiveTab('messages')} 
-          className={`flex-1 flex justify-center py-2 transition-colors ${activeTab === 'messages' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
-        >
-          <MessageCircle className={`w-6 h-6 ${activeTab === 'messages' ? 'fill-current' : ''}`} />
-        </button>
-        <button 
           onClick={() => setActiveTab('notifications')} 
           className={`flex-1 flex justify-center py-2 transition-colors ${activeTab === 'notifications' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
         >
@@ -60,7 +54,6 @@ export function SMSocialView({ initialProfileId, onViewProfile }: { initialProfi
         <div className="max-w-2xl mx-auto w-full min-h-full">
             {activeTab === 'newsfeed' && <NewsfeedView onViewProfile={handleSelectProfile} />}
             {activeTab === 'followers' && <FollowersView onViewProfile={handleSelectProfile} />}
-            {activeTab === 'messages' && <MessengerView onBack={() => setActiveTab('newsfeed')} onViewProfile={handleSelectProfile} />}
             {activeTab === 'notifications' && <NotificationsView onViewProfile={handleSelectProfile} />}
             {activeTab === 'profile' && <ProfileView profileId={initialProfileId} onBack={() => setActiveTab('newsfeed')} onViewProfile={handleSelectProfile} />}
         </div>
