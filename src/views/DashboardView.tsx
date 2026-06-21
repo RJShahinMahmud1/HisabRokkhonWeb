@@ -18,7 +18,8 @@ import {
   Globe,
   MessageCircle,
   Shield,
-  UserCircle
+  UserCircle,
+  Users
 } from "lucide-react";
 import { ViewState } from "../types";
 import { motion } from "motion/react";
@@ -199,14 +200,24 @@ export function DashboardView({
       view: "savings",
     },
     {
-      icon: <UserIcon strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
-      label: t.profile,
+      icon: <Users strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
+      label: "SM Social",
       view: "profile",
     },
     {
       icon: <UserCircle strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
       label: "Profile",
       view: "my_profile",
+    },
+    {
+      icon: (
+        <div className="relative">
+          <MessageCircle strokeWidth={1.5} size={26} className="text-[#32C58F]" />
+          {totalUnread > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>}
+        </div>
+      ),
+      label: t.messages,
+      view: "messages",
     },
     {
       icon: <Settings strokeWidth={1.5} size={26} className="text-[#32C58F]" />,

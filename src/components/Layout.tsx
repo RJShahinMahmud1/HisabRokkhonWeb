@@ -50,6 +50,7 @@ export function Layout({ children, currentView, onViewChange, onViewProfile }: L
     { id: 'expense', label: t.expense, icon: <CreditCard size={18} /> },
     { id: 'loans', label: t.loans, icon: <BookOpen size={18} /> },
     { id: 'savings', label: t.savings, icon: <PiggyBank size={18} /> },
+    { id: 'messages', label: t.messages, icon: <MessageCircle size={18} /> },
     { id: 'budget', label: t.budget, icon: <PieChart size={18} /> },
     { id: 'reports', label: t.reports, icon: <PieChart size={18} /> },
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
@@ -146,12 +147,7 @@ export function Layout({ children, currentView, onViewChange, onViewProfile }: L
             className="p-4 bg-slate-100 dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 text-left hover:bg-slate-200 dark:hover:bg-slate-700 transition-all w-full group relative block cursor-pointer shadow-sm hover:shadow-md"
           >
             <div className="flex items-center justify-between mb-1">
-              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">SM Social</p>
-              {totalUnread > 0 && (
-                <span className="w-5 h-5 bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold">
-                    {totalUnread > 99 ? '99+' : totalUnread}
-                  </span>
-                )}
+              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">Profile</p>
             </div>
             <div className="flex items-center gap-3">
                <motion.div

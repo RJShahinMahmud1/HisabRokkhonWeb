@@ -66,6 +66,7 @@ function AppContent() {
       case 'settings': return <SettingsView />;
       case 'admin': return <AdminView />;
       case 'profile': return <SMSocialView initialProfileId={viewingProfileId} onViewProfile={handleViewProfile} />;
+      case 'my_profile': return <ProfileView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
       case 'messages': return <MessengerView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
       default: return <DashboardView onChangeView={setCurrentView} onViewProfile={handleViewProfile} />;
     }
