@@ -96,5 +96,13 @@ service cloud.firestore {
     match /userReactions/{reactionId} {
       allow read, write: if isSignedIn();
     }
+    
+    match /calls/{callId} {
+      allow read, write: if isSignedIn();
+      
+      match /{candidatesType}/{candidateId} {
+         allow read, write: if isSignedIn();
+      }
+    }
   }
 }

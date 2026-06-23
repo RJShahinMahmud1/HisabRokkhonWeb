@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, Play, Pause, Square } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, Play, Pause, Square, Video, Phone } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -21,6 +21,8 @@ import {
 } from '../lib/chatService';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { CallData, subscribeToIncomingCalls, startCall, updateCallStatus } from '../lib/callService';
+import { CallScreen } from '../components/CallScreen';
 
 function VoiceMessagePlayer({ src, duration: initialDuration, isMe }: { src: string, duration?: number, isMe: boolean }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -171,6 +173,51 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const audioChunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordingDurationRef = useRef<number>(0);
+
+  // Calling states
+  const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
+  const [activeCall, setActiveCall] = useState<{ call: CallData, isCaller: boolean } | null>(null);
+
+  // Subscribe to incoming calls
+  useEffect(() => {
+    if (!user) return;
+    const unsub = subscribeToIncomingCalls(user.id, (call) => {
+       if (call.status === 'ringing') {
+          setIncomingCall(call);
+       } else if (call.status === 'ended' || call.status === 'missed' || call.status === 'rejected') {
+          setIncomingCall(null);
+       }
+    });
+    return () => unsub();
+  }, [user]);
+
+  const handleStartCall = async (type: 'audio' | 'video') => {
+      if (!user || !activeConvId || !otherUserId) return;
+      try {
+         const callId = await startCall(activeConvId, user.id, otherUserId, type);
+         setActiveCall({
+             call: { id: callId, conversationId: activeConvId, callerId: user.id, calleeId: otherUserId, type, status: 'ringing', createdAt: new Date() },
+             isCaller: true
+         });
+      } catch(e) {
+         console.error('Call failed', e);
+         alert(lang === 'bn' ? 'কল করতে সমস্যা হয়েছে!' : 'Failed to start call!');
+      }
+  };
+
+  const handleAcceptCall = async () => {
+      if (!incomingCall || !incomingCall.id) return;
+      setActiveCall({ call: incomingCall, isCaller: false });
+      setIncomingCall(null);
+      // Status to connected will be handled by CallScreen when answer is generated
+  };
+
+  const handleRejectCall = async () => {
+      if (!incomingCall || !incomingCall.id) return;
+      await updateCallStatus(incomingCall.id, 'rejected');
+      setIncomingCall(null);
+  };
+
 
   if (user?.messagesDisabled) {
       return (
@@ -714,7 +761,13 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                             </div>
                         </div>
                     </div>
-                    <div className="relative">
+                    <div className="relative flex items-center gap-1">
+                        <button onClick={() => handleStartCall('audio')} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-blue-500">
+                           <Phone className="w-5 h-5" />
+                        </button>
+                        <button onClick={() => handleStartCall('video')} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-blue-500">
+                           <Video className="w-5 h-5" />
+                        </button>
                         <button onClick={() => setShowConvOptions(!showConvOptions)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-500">
                            <MoreVertical className="w-5 h-5" />
                         </button>
@@ -1042,6 +1095,52 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
             </button>
           </div>
         </div>
+      )}
+
+      {/* Incoming Call Dialog */}
+      {incomingCall && !activeCall && (
+         <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center relative animate-in zoom-in-95 duration-200">
+                 <div className="w-20 h-20 mx-auto rounded-full bg-slate-200 dark:bg-slate-800 mb-4 overflow-hidden shadow-inner">
+                     {profiles[incomingCall.callerId]?.avatarUrl ? (
+                         <img src={profiles[incomingCall.callerId].avatarUrl} alt="Caller" className="w-full h-full object-cover" />
+                     ) : (
+                         <span className="text-2xl font-bold text-slate-500 flex items-center justify-center h-full">{profiles[incomingCall.callerId]?.name?.[0] || '?'}</span>
+                     )}
+                 </div>
+                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+                     {profiles[incomingCall.callerId]?.name || 'Unknown User'}
+                 </h3>
+                 <p className="text-slate-500 mb-8 font-medium">
+                     Incoming {incomingCall.type === 'video' ? 'Video' : 'Voice'} Call...
+                 </p>
+                 <div className="flex items-center justify-center gap-6">
+                     <button 
+                         onClick={handleRejectCall}
+                         className="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 transition shadow-lg shadow-rose-900/50 hover:scale-105 active:scale-95"
+                     >
+                         <Phone className="w-7 h-7 rotate-[135deg]" />
+                     </button>
+                     <button 
+                         onClick={handleAcceptCall}
+                         className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition shadow-lg shadow-green-900/50 hover:scale-105 active:scale-95 animate-pulse"
+                     >
+                         {incomingCall.type === 'video' ? <Video className="w-7 h-7" /> : <Phone className="w-7 h-7" />}
+                     </button>
+                 </div>
+             </div>
+         </div>
+      )}
+
+      {/* Active Call Screen */}
+      {activeCall && (
+          <CallScreen 
+             call={activeCall.call} 
+             isCaller={activeCall.isCaller} 
+             onClose={() => setActiveCall(null)} 
+             otherUserName={activeCall.isCaller ? profiles[activeCall.call.calleeId]?.name : profiles[activeCall.call.callerId]?.name}
+             otherUserAvatar={activeCall.isCaller ? profiles[activeCall.call.calleeId]?.avatarUrl : profiles[activeCall.call.callerId]?.avatarUrl}
+          />
       )}
     </div>
   );
