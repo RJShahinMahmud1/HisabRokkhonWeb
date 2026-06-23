@@ -45,6 +45,8 @@ export interface Message {
   deletedFor?: string[];
   reactions?: Record<string, string>;
   imageUrl?: string;
+  audioUrl?: string;
+  audioDuration?: number;
   replyTo?: {
     id: string;
     text: string;
@@ -157,7 +159,9 @@ export const sendMessage = async (
     senderId: string;
     senderName?: string;
     imageUrl?: string;
-  }
+  },
+  audioUrl?: string,
+  audioDuration?: number
 ) => {
   // 1. Add Message
   const messagePayload: any = {
@@ -169,6 +173,12 @@ export const sendMessage = async (
   };
   if (imageUrl) {
     messagePayload.imageUrl = imageUrl;
+  }
+  if (audioUrl) {
+    messagePayload.audioUrl = audioUrl;
+    if (audioDuration) {
+      messagePayload.audioDuration = audioDuration;
+    }
   }
   if (replyTo) {
     messagePayload.replyTo = replyTo;
@@ -190,8 +200,15 @@ export const sendMessage = async (
   
   const updatedDeletedFor = currentDeletedFor.filter(id => id !== senderId && id !== otherUserId);
 
+  let lastTxt = text;
+  if (imageUrl) {
+    lastTxt = '📷 Photo';
+  } else if (audioUrl) {
+    lastTxt = '🎙️ Voice message';
+  }
+
   await updateDoc(convRef, {
-    lastMessageText: imageUrl ? '📷 Photo' : text,
+    lastMessageText: lastTxt,
     lastMessageSenderId: senderId,
     lastMessageTime: serverTimestamp(),
     [`unreadCount.${otherUserId}`]: otherUnread + 1,

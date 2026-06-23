@@ -72,55 +72,52 @@ export function SMSocialView({ initialProfileId, onViewProfile }: { initialProfi
 
   return (
     <div className="flex flex-col h-full bg-slate-50 dark:bg-slate-900 overflow-hidden shadow-xl sm:rounded-2xl w-full">
-      {/* Top Navigation Bar - FB Lite Style */}
-      <div className="flex items-center justify-between bg-white dark:bg-slate-950 px-2 py-2 border-b border-slate-200 dark:border-slate-800 shrink-0">
-        <button 
-          onClick={() => setActiveTab('newsfeed')} 
-          className={`flex-1 flex justify-center py-2 transition-colors ${activeTab === 'newsfeed' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
-        >
-          <Home className={`w-6 h-6 ${activeTab === 'newsfeed' ? 'fill-current' : ''}`} />
-        </button>
-        <button 
-          onClick={() => setActiveTab('followers')} 
-          className={`flex-1 flex justify-center py-2 transition-colors ${activeTab === 'followers' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
-        >
-          <Users className={`w-6 h-6 ${activeTab === 'followers' ? 'fill-current' : ''}`} />
-        </button>
-        <button 
-          onClick={() => setActiveTab('messages')} 
-          className={`flex-1 flex justify-center py-2 transition-colors relative ${activeTab === 'messages' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
-        >
-          <div className="relative">
-            <MessageCircle className={`w-6 h-6 ${activeTab === 'messages' ? 'fill-current' : ''}`} />
-            {totalUnreadMessages > 0 && (
-              <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] flex items-center justify-center font-bold border-2 border-white dark:border-slate-950">
-                {totalUnreadMessages > 99 ? '99+' : totalUnreadMessages}
-              </span>
-            )}
-          </div>
-        </button>
-        <button 
-          onClick={() => setActiveTab('notifications')} 
-          className={`flex-1 flex justify-center py-2 transition-colors relative ${activeTab === 'notifications' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
-        >
-          <div className="relative">
-            <Bell className={`w-6 h-6 ${activeTab === 'notifications' ? 'fill-current' : ''}`} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] flex items-center justify-center font-bold border-2 border-white dark:border-slate-950">
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </span>
-            )}
-          </div>
-        </button>
-        <button 
-          onClick={() => setActiveTab('profile')} 
-          className={`flex-1 flex justify-center py-2 transition-colors ${activeTab === 'profile' ? 'text-blue-600 dark:text-blue-500 border-b-2 border-blue-600 dark:border-blue-500' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-900 rounded-lg'}`}
-        >
-          <UserIcon className={`w-6 h-6 ${activeTab === 'profile' ? 'fill-current' : ''}`} />
-        </button>
+      {/* Top Navigation Bar - Modern & Professional Style */}
+      <div className="flex justify-center bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-xl shrink-0 z-10 sticky top-0 border-b border-slate-200/50 dark:border-slate-800/50">
+        <div className="flex items-center justify-between w-full max-w-lg px-4 py-2">
+          {[
+            { id: 'newsfeed', icon: Home },
+            { id: 'followers', icon: Users },
+            { id: 'messages', icon: MessageCircle, badge: totalUnreadMessages },
+            { id: 'notifications', icon: Bell, badge: unreadCount },
+            { id: 'profile', icon: UserIcon }
+          ].map((tab) => {
+            const isActive = activeTab === tab.id;
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`relative flex items-center justify-center p-3 rounded-2xl transition-colors duration-300 group outline-none ${
+                  isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+              >
+                {isActive && (
+                  <motion.div
+                    layoutId="socialNavIndicator"
+                    className="absolute inset-0 bg-blue-50 dark:bg-blue-500/10 rounded-2xl"
+                    initial={false}
+                    transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                  />
+                )}
+                <div className="relative z-10">
+                   <Icon 
+                     className={`w-[26px] h-[26px] transition-transform duration-300 ${isActive ? 'fill-current scale-110' : 'scale-100 group-hover:scale-110 group-active:scale-95'}`} 
+                     strokeWidth={isActive ? 2 : 1.75} 
+                   />
+                   {tab.badge ? (
+                      <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-[4px] bg-rose-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold border-2 border-white dark:border-[#0B1120] shadow-sm transform transition-all">
+                        {tab.badge > 99 ? '99+' : tab.badge}
+                      </span>
+                   ) : null}
+                </div>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto w-full relative overflow-x-hidden">
+      <div className="flex-1 w-full relative overflow-x-hidden overflow-y-auto bg-slate-50 dark:bg-slate-900/50">
         <div className="max-w-2xl mx-auto w-full min-h-full">
           <AnimatePresence mode="wait">
             <motion.div

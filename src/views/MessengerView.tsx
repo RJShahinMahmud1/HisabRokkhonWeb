@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, Play, Pause, Square } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -21,6 +21,121 @@ import {
 } from '../lib/chatService';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+
+function VoiceMessagePlayer({ src, duration: initialDuration, isMe }: { src: string, duration?: number, isMe: boolean }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(initialDuration || 0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    const audio = new Audio(src);
+    audioRef.current = audio;
+
+    const handleTimeUpdate = () => {
+      setCurrentTime(audio.currentTime);
+    };
+
+    const handleLoadedMetadata = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+
+    const handleEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    audio.addEventListener('timeupdate', handleTimeUpdate);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnded);
+
+    return () => {
+      audio.pause();
+      audio.removeEventListener('timeupdate', handleTimeUpdate);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnded);
+    };
+  }, [src]);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      audioRef.current.play().catch(err => console.log("Audio play error", err));
+      setIsPlaying(true);
+    }
+  };
+
+  const handleSeek = (e: React.MouseEvent, index: number, total: number) => {
+    e.stopPropagation();
+    if (!audioRef.current || duration === 0) return;
+    const clickPercent = index / total;
+    const newTime = clickPercent * duration;
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const formatAudioDuration = (secs: number) => {
+    if (isNaN(secs) || secs === Infinity) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  // Waveform bars
+  const waveformBars = [10, 16, 24, 14, 8, 20, 28, 16, 22, 12, 26, 18, 10, 16, 24, 14, 20, 12, 18, 8, 14, 22, 16, 10];
+
+  return (
+    <div className="flex items-center gap-3 py-1.5 px-1 min-w-[210px] md:min-w-[240px]">
+      <button 
+        type="button"
+        onClick={togglePlay}
+        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all active:scale-90 hover:scale-105 shadow ${
+          isMe 
+            ? 'bg-white text-blue-600 hover:bg-slate-50' 
+            : 'bg-blue-600 text-white hover:bg-blue-700'
+        }`}
+      >
+        {isPlaying ? (
+          <Pause className="w-4 h-4 fill-current" />
+        ) : (
+          <Play className="w-4 h-4 fill-current ml-0.5" />
+        )}
+      </button>
+
+      <div className="flex flex-col flex-1 gap-1">
+        <div className="flex items-end gap-[3px] h-8 pt-1 select-none">
+          {waveformBars.map((height, idx) => {
+            const barProgress = (idx / waveformBars.length) * duration;
+            const isPlayed = currentTime >= barProgress;
+            return (
+              <div 
+                key={idx}
+                onClick={(e) => handleSeek(e, idx, waveformBars.length)}
+                style={{ height: `${(height / 30) * 100}%` }}
+                className={`w-[3px] rounded-full cursor-pointer transition-colors duration-150 ${
+                  isPlayed 
+                    ? (isMe ? 'bg-white' : 'bg-blue-600 dark:bg-blue-400') 
+                    : (isMe ? 'bg-blue-300/50' : 'bg-slate-200 dark:bg-slate-700')
+                }`}
+              />
+            );
+          })}
+        </div>
+
+        <div className={`flex justify-between text-[10px] font-semibold ${isMe ? 'text-blue-100' : 'text-slate-500'}`}>
+          <span>{formatAudioDuration(currentTime)}</span>
+          <span>{formatAudioDuration(duration)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, onViewProfile?: (uid: string) => void }) {
   const { user, lang, isDark } = useAppStore();
@@ -47,6 +162,15 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Voice Recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [micError, setMicError] = useState(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingDurationRef = useRef<number>(0);
 
   if (user?.messagesDisabled) {
       return (
@@ -341,6 +465,127 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
     }, 2000);
   };
 
+  // Cleanup recording resources on unmount
+  useEffect(() => {
+    return () => {
+      if (recordingTimerRef.current) {
+        clearInterval(recordingTimerRef.current);
+      }
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+        try {
+          mediaRecorderRef.current.stop();
+          if (mediaRecorderRef.current.stream) {
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+          }
+        } catch(e) {}
+      }
+    };
+  }, []);
+
+  const startRecording = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
+      
+      let options = { mimeType: 'audio/webm' };
+      let recorder: MediaRecorder;
+      try {
+        recorder = new MediaRecorder(stream, options);
+      } catch (err) {
+        // Fallback for Safari/iOS
+        recorder = new MediaRecorder(stream);
+      }
+      
+      mediaRecorderRef.current = recorder;
+      
+      recorder.ondataavailable = (event) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = async () => {
+        // Stop stream tracks to turn off mic light
+        stream.getTracks().forEach(track => track.stop());
+
+        const durationSecs = recordingDurationRef.current;
+        if (durationSecs < 1) {
+          return; // Ignore extremely short recordings
+        }
+
+        if (audioChunksRef.current.length === 0) return;
+
+        const audioBlob = new Blob(audioChunksRef.current, { type: recorder.mimeType || 'audio/webm' });
+        
+        // Convert Blob to base64
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result as string;
+          if (activeConvId && user && otherUserId) {
+            await sendMessage(
+              activeConvId, 
+              user.id, 
+              otherUserId, 
+              '', 
+              undefined, 
+              undefined, 
+              base64Audio, 
+              durationSecs
+            );
+          }
+        };
+      };
+
+      // Reset & Start timer
+      setRecordingDuration(0);
+      recordingDurationRef.current = 0;
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      
+      recordingTimerRef.current = setInterval(() => {
+        setRecordingDuration(prev => {
+          const next = prev + 1;
+          recordingDurationRef.current = next;
+          return next;
+        });
+      }, 1000);
+
+      recorder.start(250);
+      setIsRecording(true);
+    } catch (err) {
+      console.error('Microphone access denied or error:', err);
+      setMicError(true);
+    }
+  };
+
+  const stopRecording = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state === 'inactive') return;
+    
+    mediaRecorderRef.current.stop();
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+    }
+    setIsRecording(false);
+  };
+
+  const cancelRecording = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!mediaRecorderRef.current) return;
+    
+    // Clear chunks so onstop does not save
+    audioChunksRef.current = [];
+    mediaRecorderRef.current.stop();
+    
+    if (recordingTimerRef.current) {
+      clearInterval(recordingTimerRef.current);
+    }
+    setIsRecording(false);
+    setRecordingDuration(0);
+    recordingDurationRef.current = 0;
+  };
+
   const formatTime = (ts: any) => {
       if(!ts) return '';
       const d = ts.toDate ? ts.toDate() : new Date(ts);
@@ -559,7 +804,11 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                                                     />
                                                 </div>
                                             )}
-                                            <p className="break-words">{msg.text}</p>
+                                            {!msg.isDeletedForEveryone && msg.audioUrl ? (
+                                                <VoiceMessagePlayer src={msg.audioUrl} duration={msg.audioDuration} isMe={isMe} />
+                                            ) : (
+                                                <p className="break-words">{msg.text}</p>
+                                            )}
                                         </div>
                                         <div className="relative opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                             <button onClick={(e) => { e.stopPropagation(); setMessageMenuId(messageMenuId === msg.id ? null : msg.id); }} className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500">
@@ -665,40 +914,91 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                         </div>
                     )}
 
-                    <form onSubmit={handleSend} className="flex items-center gap-2">
-                        <input
-                            type="file"
-                            accept="image/*"
-                            id="chat-image-picker"
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) processImage(file);
-                            }}
-                        />
-                        <label 
-                            htmlFor="chat-image-picker" 
-                            title="ছবি যুক্ত করুন"
-                            className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-500 hover:text-blue-500 transition shrink-0"
-                        >
-                            <ImageIcon className="w-5 h-5" />
-                        </label>
+                    {isRecording ? (
+                        <div className="flex items-center justify-between bg-rose-50/80 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-full px-4 py-2 animate-pulse">
+                            <div className="flex items-center gap-3 text-sm text-rose-600 dark:text-rose-400 font-medium">
+                                <span className="relative flex h-3 w-3">
+                                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                  <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-600"></span>
+                                </span>
+                                <span className="font-semibold">
+                                    {lang === 'bn' 
+                                      ? `ভয়েস রেকর্ড হচ্ছে... ${recordingDuration} সে.` 
+                                      : `Recording voice... ${recordingDuration}s`}
+                                </span>
+                                {/* Mini animated audio wave */}
+                                <div className="flex gap-[2px] items-end h-4 pb-1">
+                                    <div className="w-[2px] h-2.5 bg-rose-500 rounded animate-bounce" style={{ animationDuration: '0.6s' }} />
+                                    <div className="w-[2px] h-4 bg-rose-500 rounded animate-bounce" style={{ animationDuration: '0.4s' }} />
+                                    <div className="w-[2px] h-1.5 bg-rose-500 rounded animate-bounce" style={{ animationDuration: '0.8s' }} />
+                                    <div className="w-[2px] h-3 bg-rose-500 rounded animate-bounce" style={{ animationDuration: '0.5s' }} />
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                <button 
+                                    type="button"
+                                    onClick={cancelRecording}
+                                    title={lang === 'bn' ? 'বাতিল করুন' : 'Cancel'}
+                                    className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition active:scale-95"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                                <button 
+                                    type="button"
+                                    onClick={stopRecording}
+                                    title={lang === 'bn' ? 'পাঠান' : 'Send'}
+                                    className="p-2.5 bg-rose-600 text-white rounded-full hover:bg-rose-700 transition active:scale-95 flex items-center justify-center shadow shadow-rose-950/20"
+                                >
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSend} className="flex items-center gap-2">
+                            <input
+                                type="file"
+                                accept="image/*"
+                                id="chat-image-picker"
+                                className="hidden"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) processImage(file);
+                                }}
+                            />
+                            <label 
+                                htmlFor="chat-image-picker" 
+                                title={lang === 'bn' ? "ছবি যুক্ত করুন" : "Attach Image"}
+                                className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer text-slate-500 hover:text-blue-500 transition shrink-0"
+                            >
+                                <ImageIcon className="w-5 h-5" />
+                            </label>
 
-                        <input
-                            type="text"
-                            value={text}
-                            onChange={handleTextChange}
-                            placeholder={selectedImage ? "ছবির সাথে ক্যাপশন লিখুন..." : "Type a message..."}
-                            className={`flex-1 rounded-full px-4 py-2.5 outline-none ${isDark ? 'bg-slate-900 text-white placeholder-slate-500' : 'bg-slate-100 text-slate-900 placeholder-slate-500'} focus:ring-2 focus:ring-blue-500/50`}
-                        />
-                        <button 
-                            type="submit" 
-                            disabled={!text.trim() && !selectedImage} 
-                            className="p-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 shrink-0"
-                        >
-                            <Send className="w-5 h-5" />
-                        </button>
-                    </form>
+                            <button 
+                                type="button"
+                                onClick={startRecording}
+                                title={lang === 'bn' ? "ভয়েস মেসেজ রেকর্ড করুন" : "Record voice message"}
+                                className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-blue-500 transition shrink-0"
+                            >
+                                <Mic className="w-5 h-5" />
+                            </button>
+
+                            <input
+                                type="text"
+                                value={text}
+                                onChange={handleTextChange}
+                                placeholder={selectedImage ? (lang === 'bn' ? "ছবির সাথে ক্যাপশন লিখুন..." : "Type caption with photo...") : (lang === 'bn' ? "মেসেজ লিখুন..." : "Type a message...")}
+                                className={`flex-1 rounded-full px-4 py-2.5 outline-none ${isDark ? 'bg-slate-900 text-white placeholder-slate-500' : 'bg-slate-100 text-slate-900 placeholder-slate-500'} focus:ring-2 focus:ring-blue-500/50`}
+                            />
+                            <button 
+                                type="submit" 
+                                disabled={!text.trim() && !selectedImage} 
+                                className="p-2.5 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition disabled:opacity-50 shrink-0"
+                            >
+                                <Send className="w-5 h-5" />
+                            </button>
+                        </form>
+                    )}
                 </div>
             </>
         ) : (
@@ -711,6 +1011,38 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
             </div>
         )}
       </div>
+
+      {micError && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl text-center relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setMicError(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+              id="close_mic_error_btn"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center mx-auto mb-4 animate-bounce">
+              <Mic className="w-8 h-8" />
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+              {lang === 'bn' ? 'মাইক্রোফোন অনুমতি প্রয়োজন' : 'Microphone Permission Required'}
+            </h3>
+            <p className="text-slate-600 dark:text-slate-400 text-sm mb-6 leading-relaxed">
+              {lang === 'bn' 
+                ? "প্রিভিউ ফ্রেমের ভেতরে মাইক্রোফোন ব্যবহারের অনুমতি পাওয়া যায়নি। এটি সমাধান করতে অনুগ্রহ করে আপনার স্ক্রিনের উপরে ডান কোণায় থাকা 'Open in New Tab' বাটনে ক্লিক করে অ্যাপটি নতুন ট্যাবে খুলুন অথবা ব্রাউজারের অ্যাড্রেস বার থেকে মাইক্রোফোন ব্যবহারের অনুমতি দিন।" 
+                : "Microphone access was denied or could not be initiated in this frame. To resolve this, please click 'Open in New Tab' in the top-right corner to open the app directly, or grant microphone permission in your browser address bar settings."}
+            </p>
+            <button 
+              onClick={() => setMicError(false)}
+              className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-2xl active:scale-95 transition"
+              id="dismiss_mic_error_btn"
+            >
+              {lang === 'bn' ? 'ঠিক আছে' : 'Got it'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

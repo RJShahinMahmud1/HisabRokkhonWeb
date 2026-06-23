@@ -159,10 +159,10 @@ export function NewsfeedView({ onViewProfile }: { onViewProfile?: (userId: strin
   };
 
   return (
-    <div className="bg-slate-100 dark:bg-slate-900 pb-20 min-h-screen">
+    <div className="bg-slate-50 dark:bg-slate-900 pb-20 min-h-screen">
       {/* Dynamic Search Header */}
-      <div className="bg-white dark:bg-slate-950 px-4 py-3 shadow-sm border-b border-slate-300 dark:border-slate-800 sticky top-0 z-20">
-        <div className="relative">
+      <div className="bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-xl px-4 py-3 shadow-sm border-b border-slate-200/50 dark:border-slate-800/50 sticky top-0 z-20">
+        <div className="relative max-w-2xl mx-auto">
           <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
             <Search className="w-4.5 h-4.5" />
           </span>
@@ -171,7 +171,7 @@ export function NewsfeedView({ onViewProfile }: { onViewProfile?: (userId: strin
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={lang === 'bn' ? 'পোস্ট বা বন্ধু খুঁজুন...' : 'Search posts or friends...'}
-            className="w-full bg-slate-100 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-500 pl-10 pr-10 py-2 rounded-full outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 border border-slate-200 dark:border-slate-800 transition text-sm font-medium"
+            className="w-full bg-slate-100/50 dark:bg-slate-800/50 text-slate-900 dark:text-slate-100 placeholder-slate-500 pl-10 pr-10 py-2.5 rounded-2xl outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-blue-500/30 border border-transparent focus:border-blue-500/50 transition-all text-[15px] font-medium"
             id="newsfeed_search_input"
           />
           {searchQuery && (
@@ -187,36 +187,42 @@ export function NewsfeedView({ onViewProfile }: { onViewProfile?: (userId: strin
 
         {/* Search Results Filter Tabs */}
         {searchQuery && (
-          <div className="flex gap-4 mt-2.5 border-t border-slate-100 dark:border-slate-800 pt-2 select-none">
+          <div className="flex justify-center gap-6 mt-3 border-t border-slate-100/50 dark:border-slate-800/50 pt-3 select-none max-w-2xl mx-auto">
             <button
               onClick={() => setSearchActiveTab('posts')}
-              className={`pb-1 text-xs font-bold transition border-b-2 ${
+              className={`pb-1.5 text-sm font-bold transition-all relative ${
                 searchActiveTab === 'posts'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-500'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               }`}
               id="search_tab_posts_btn"
             >
               {lang === 'bn' ? `পোস্টসমূহ (${filteredPosts.length})` : `Posts (${filteredPosts.length})`}
+              {searchActiveTab === 'posts' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+              )}
             </button>
             <button
               onClick={() => setSearchActiveTab('people')}
-              className={`pb-1 text-xs font-bold transition border-b-2 ${
+              className={`pb-1.5 text-sm font-bold transition-all relative ${
                 searchActiveTab === 'people'
-                  ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-500'
-                  : 'border-transparent text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
+                  ? 'text-blue-600 dark:text-blue-400'
+                  : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300'
               }`}
               id="search_tab_people_btn"
             >
               {lang === 'bn' ? `বন্ধু/মানুষ (${matchingUsers.length})` : `Friends/People (${matchingUsers.length})`}
+              {searchActiveTab === 'people' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 dark:bg-blue-400 rounded-t-full" />
+              )}
             </button>
           </div>
         )}
       </div>
       {/* Create Post (only when not searching) */}
       {!searchQuery && (
-      <div className="bg-white dark:bg-slate-950 px-4 py-3 shadow-sm border-b border-slate-300 dark:border-slate-800 mb-2">
-        <form onSubmit={handleCreatePost} className="flex flex-col gap-2">
+      <div className="bg-white dark:bg-slate-950 px-4 py-4 shadow-sm border-b border-slate-200/50 dark:border-slate-800/50 mb-3">
+        <form onSubmit={handleCreatePost} className="flex flex-col gap-3 max-w-2xl mx-auto">
           <div className="flex gap-2">
              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-300">
                  {user?.avatarUrl ? <img src={user.avatarUrl} alt="" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center font-bold text-slate-400">{user?.name?.[0]}</div>}
