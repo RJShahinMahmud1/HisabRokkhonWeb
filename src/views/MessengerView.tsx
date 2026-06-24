@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, Play, Pause, Square, Video, Phone } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, MicOff, Play, Pause, Square, Video, Phone } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -179,6 +179,14 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const [activeCall, setActiveCall] = useState<{ call: CallData, isCaller: boolean } | null>(null);
   const [currentCallStatus, setCurrentCallStatus] = useState<CallData['status'] | null>(null);
   const [recentCallMessage, setRecentCallMessage] = useState<{ text: string, type: 'info' | 'success' | 'error' | 'warning' } | null>(null);
+  const [isCallMuted, setIsCallMuted] = useState(false);
+
+  // Reset mute state when activeCall ends
+  useEffect(() => {
+    if (!activeCall) {
+      setIsCallMuted(false);
+    }
+  }, [activeCall]);
 
   // Subscribe to incoming calls
   useEffect(() => {
@@ -885,12 +893,27 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                          </span>
                          <span>{recentCallMessage.text}</span>
                       </div>
-                      <button 
-                         onClick={() => setRecentCallMessage(null)} 
-                         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                      >
-                         <X className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-3">
+                         {activeCall && (currentCallStatus === 'connected' || currentCallStatus === 'ringing') && (
+                            <button
+                               onClick={() => setIsCallMuted(!isCallMuted)}
+                               className={`p-1.5 rounded-full transition flex items-center justify-center ${
+                                  isCallMuted
+                                    ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/50 shadow-sm'
+                                    : 'bg-white/40 hover:bg-white/60 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 text-slate-700 hover:text-slate-900 shadow-sm'
+                               }`}
+                               title={isCallMuted ? (lang === 'bn' ? 'মাইক্রোফোন চালু করুন' : 'Unmute microphone') : (lang === 'bn' ? 'মাইক্রোফোন বন্ধ করুন' : 'Mute microphone')}
+                            >
+                               {isCallMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                            </button>
+                         )}
+                         <button 
+                            onClick={() => setRecentCallMessage(null)} 
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                         >
+                            <X className="w-4 h-4" />
+                         </button>
+                      </div>
                    </div>
                 )}
 
@@ -1252,6 +1275,8 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
              onClose={() => setActiveCall(null)} 
              otherUserName={activeCall.isCaller ? profiles[activeCall.call.calleeId]?.name : profiles[activeCall.call.callerId]?.name}
              otherUserAvatar={activeCall.isCaller ? profiles[activeCall.call.calleeId]?.avatarUrl : profiles[activeCall.call.callerId]?.avatarUrl}
+             isMuted={isCallMuted}
+             onMuteToggle={setIsCallMuted}
           />
       )}
     </div>

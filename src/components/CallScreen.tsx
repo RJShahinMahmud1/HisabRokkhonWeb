@@ -17,15 +17,27 @@ interface CallScreenProps {
   onClose: () => void;
   otherUserName?: string;
   otherUserAvatar?: string;
+  isMuted?: boolean;
+  onMuteToggle?: (muted: boolean) => void;
 }
 
-export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', otherUserAvatar = '' }: CallScreenProps) {
+export function CallScreen({ 
+  call, 
+  isCaller, 
+  onClose, 
+  otherUserName = 'User', 
+  otherUserAvatar = '',
+  isMuted: propIsMuted,
+  onMuteToggle
+}: CallScreenProps) {
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
   const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
-  const [isMuted, setIsMuted] = useState(false);
+  const [localIsMuted, setLocalIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(call.type === 'audio');
   const [callStatus, setCallStatus] = useState<CallData['status']>(call.status);
   const [duration, setDuration] = useState(0);
+
+  const isMuted = propIsMuted !== undefined ? propIsMuted : localIsMuted;
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
@@ -71,6 +83,11 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
           video: call.type === 'video',
           audio: true,
         });
+        // Apply current mute state immediately
+        const audioTrack = stream.getAudioTracks()[0];
+        if (audioTrack) {
+          audioTrack.enabled = !isMuted;
+        }
         setLocalStream(stream);
       } catch (err) {
         console.error('Failed to get local stream', err);
@@ -229,13 +246,22 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
     cleanup();
   };
 
-  const toggleMute = () => {
+  // Synchronize mute status dynamically with localStream tracks
+  useEffect(() => {
     if (localStream) {
       const audioTrack = localStream.getAudioTracks()[0];
       if (audioTrack) {
-        audioTrack.enabled = !audioTrack.enabled;
-        setIsMuted(!audioTrack.enabled);
+        audioTrack.enabled = !isMuted;
       }
+    }
+  }, [isMuted, localStream]);
+
+  const toggleMute = () => {
+    const nextMuted = !isMuted;
+    if (onMuteToggle) {
+      onMuteToggle(nextMuted);
+    } else {
+      setLocalIsMuted(nextMuted);
     }
   };
 
