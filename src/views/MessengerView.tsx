@@ -21,7 +21,7 @@ import {
 } from '../lib/chatService';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { CallData, subscribeToIncomingCalls, startCall, updateCallStatus } from '../lib/callService';
+import { CallData, subscribeToIncomingCalls, startCall, updateCallStatus, subscribeToCall } from '../lib/callService';
 import { CallScreen } from '../components/CallScreen';
 
 function VoiceMessagePlayer({ src, duration: initialDuration, isMe }: { src: string, duration?: number, isMe: boolean }) {
@@ -177,6 +177,8 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   // Calling states
   const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
   const [activeCall, setActiveCall] = useState<{ call: CallData, isCaller: boolean } | null>(null);
+  const [currentCallStatus, setCurrentCallStatus] = useState<CallData['status'] | null>(null);
+  const [recentCallMessage, setRecentCallMessage] = useState<{ text: string, type: 'info' | 'success' | 'error' | 'warning' } | null>(null);
 
   // Subscribe to incoming calls
   useEffect(() => {
@@ -191,6 +193,73 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
     return () => unsub();
   }, [user]);
 
+  // Subscribe to active call status for real-time visual indicator in MessengerView
+  useEffect(() => {
+    if (!activeCall?.call?.id) {
+      setCurrentCallStatus(null);
+      return;
+    }
+    
+    setCurrentCallStatus(activeCall.call.status);
+    
+    // Set initial calling message
+    setRecentCallMessage({
+      text: lang === 'bn' 
+        ? `${activeCall.call.type === 'video' ? 'ভিডিও' : 'অডিও'} কল শুরু হচ্ছে...` 
+        : `Starting ${activeCall.call.type === 'video' ? 'Video' : 'Audio'} Call...`,
+      type: 'info'
+    });
+
+    const unsub = subscribeToCall(activeCall.call.id, (updatedCall) => {
+      setCurrentCallStatus(updatedCall.status);
+      
+      const isVideo = updatedCall.type === 'video';
+      const callTypeLabel = lang === 'bn' ? (isVideo ? 'ভিডিও' : 'অডিও') : (isVideo ? 'Video' : 'Audio');
+
+      if (updatedCall.status === 'ringing') {
+        setRecentCallMessage({
+          text: lang === 'bn' 
+            ? `${callTypeLabel} কল বাজছে...` 
+            : `${callTypeLabel} Call: Ringing...`,
+          type: 'info'
+        });
+      } else if (updatedCall.status === 'connected') {
+        setRecentCallMessage({
+          text: lang === 'bn' 
+            ? `${callTypeLabel} কল সংযুক্ত হয়েছে` 
+            : `${callTypeLabel} Call: Connected`,
+          type: 'success'
+        });
+      } else if (updatedCall.status === 'ended') {
+        setRecentCallMessage({
+          text: lang === 'bn' 
+            ? `${callTypeLabel} কল শেষ হয়েছে` 
+            : `${callTypeLabel} Call: Ended`,
+          type: 'warning'
+        });
+        setTimeout(() => setRecentCallMessage(null), 4000);
+      } else if (updatedCall.status === 'rejected') {
+        setRecentCallMessage({
+          text: lang === 'bn' 
+            ? `${callTypeLabel} কল প্রত্যাখ্যান করা হয়েছে` 
+            : `${callTypeLabel} Call: Rejected`,
+          type: 'error'
+        });
+        setTimeout(() => setRecentCallMessage(null), 4000);
+      } else if (updatedCall.status === 'missed') {
+        setRecentCallMessage({
+          text: lang === 'bn' 
+            ? `${callTypeLabel} মিসড কল` 
+            : `Missed ${callTypeLabel} Call`,
+          type: 'error'
+        });
+        setTimeout(() => setRecentCallMessage(null), 4000);
+      }
+    });
+
+    return () => unsub();
+  }, [activeCall, lang]);
+
   const handleStartCall = async (type: 'audio' | 'video') => {
       if (!user || !activeConvId || !otherUserId) return;
       try {
@@ -201,7 +270,11 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
          });
       } catch(e) {
          console.error('Call failed', e);
-         alert(lang === 'bn' ? 'কল করতে সমস্যা হয়েছে!' : 'Failed to start call!');
+         setRecentCallMessage({
+            text: lang === 'bn' ? 'কল করতে সমস্যা হয়েছে!' : 'Failed to start call!',
+            type: 'error'
+         });
+         setTimeout(() => setRecentCallMessage(null), 4000);
       }
   };
 
@@ -209,13 +282,17 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
       if (!incomingCall || !incomingCall.id) return;
       setActiveCall({ call: incomingCall, isCaller: false });
       setIncomingCall(null);
-      // Status to connected will be handled by CallScreen when answer is generated
   };
 
   const handleRejectCall = async () => {
       if (!incomingCall || !incomingCall.id) return;
       await updateCallStatus(incomingCall.id, 'rejected');
       setIncomingCall(null);
+      setRecentCallMessage({
+         text: lang === 'bn' ? 'কল প্রত্যাখ্যান করা হয়েছে' : 'Call Rejected',
+         type: 'error'
+      });
+      setTimeout(() => setRecentCallMessage(null), 4000);
   };
 
 
@@ -781,6 +858,41 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                         )}
                     </div>
                 </div>
+
+                {/* Call Status Banner */}
+                {recentCallMessage && (
+                   <div className={`px-4 lg:px-6 py-2.5 flex items-center justify-between text-xs lg:text-sm font-semibold transition-all animate-in slide-in-from-top-2 duration-300 ${
+                       recentCallMessage.type === 'success' 
+                         ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50' 
+                         : recentCallMessage.type === 'error'
+                         ? 'bg-rose-50 text-rose-800 border-b border-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50'
+                         : recentCallMessage.type === 'warning'
+                         ? 'bg-amber-50 text-amber-800 border-b border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
+                         : 'bg-blue-50 text-blue-800 border-b border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50'
+                   }`}>
+                      <div className="flex items-center gap-2">
+                         <span className="relative flex h-2 w-2">
+                            {(recentCallMessage.type === 'info' || recentCallMessage.type === 'success') && (
+                               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                                  recentCallMessage.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'
+                               }`}></span>
+                            )}
+                            <span className={`relative inline-flex rounded-full h-2 w-2 ${
+                               recentCallMessage.type === 'success' ? 'bg-emerald-500' :
+                               recentCallMessage.type === 'error' ? 'bg-rose-500' :
+                               recentCallMessage.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
+                            }`}></span>
+                         </span>
+                         <span>{recentCallMessage.text}</span>
+                      </div>
+                      <button 
+                         onClick={() => setRecentCallMessage(null)} 
+                         className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                      >
+                         <X className="w-4 h-4" />
+                      </button>
+                   </div>
+                )}
 
                 {/* Messages Area */}
                 <div 

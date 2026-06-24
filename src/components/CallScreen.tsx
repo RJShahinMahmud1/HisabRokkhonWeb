@@ -25,11 +25,41 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(call.type === 'audio');
   const [callStatus, setCallStatus] = useState<CallData['status']>(call.status);
+  const [duration, setDuration] = useState(0);
 
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
   const pc = useRef<RTCPeerConnection | null>(null);
   const unsubsRef = useRef<Array<() => void>>([]);
+
+  // Bind local stream reactively when elements mount or stream updates
+  useEffect(() => {
+    if (localVideoRef.current && localStream) {
+      localVideoRef.current.srcObject = localStream;
+    }
+  }, [localStream, isVideoOff, callStatus]);
+
+  // Bind remote stream reactively when elements mount or stream updates
+  useEffect(() => {
+    if (remoteVideoRef.current && remoteStream) {
+      remoteVideoRef.current.srcObject = remoteStream;
+    }
+  }, [remoteStream, isVideoOff, callStatus]);
+
+  // Track connected call duration
+  useEffect(() => {
+    if (callStatus !== 'connected') return;
+    const interval = setInterval(() => {
+      setDuration((prev) => prev + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [callStatus]);
+
+  const formatDuration = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
 
   // Initialize Media and Peer Connection
   useEffect(() => {
@@ -42,9 +72,6 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
           audio: true,
         });
         setLocalStream(stream);
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-        }
       } catch (err) {
         console.error('Failed to get local stream', err);
         alert('Could not access microphone/camera');
@@ -58,9 +85,6 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
       // Register remote stream
       const rStream = new MediaStream();
       setRemoteStream(rStream);
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = rStream;
-      }
 
       // Add local tracks to peer connection
       stream.getTracks().forEach((track) => {
@@ -228,16 +252,21 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
   return (
     <div className="fixed inset-0 z-50 bg-slate-900 text-white flex items-center justify-center animate-in fade-in duration-300">
       
-      {/* Remote Video Background */}
-      {(call.type === 'video' && !isVideoOff) ? (
-          <video 
-             ref={remoteVideoRef} 
-             autoPlay 
-             playsInline 
-             className={`absolute inset-0 w-full h-full object-cover ${callStatus !== 'connected' ? 'opacity-0' : 'opacity-100'}`} 
-          />
-      ) : (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900">
+      {/* Remote Video Background - Always mounted in DOM so audio & video tracks can play continuously */}
+      <video 
+         ref={remoteVideoRef} 
+         autoPlay 
+         playsInline 
+         className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ${
+           call.type === 'video' && !isVideoOff && callStatus === 'connected' 
+             ? 'opacity-100' 
+             : 'opacity-0 pointer-events-none'
+         }`} 
+      />
+
+      {/* Ringing or Audio Profile Overlay (Displayed when audio-only, video is off, or not yet fully connected) */}
+      {(call.type !== 'video' || isVideoOff || callStatus !== 'connected') && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-900 z-0">
              <div className="w-32 h-32 bg-slate-800 rounded-full flex items-center justify-center mb-6 overflow-hidden border-4 border-slate-700">
                 {otherUserAvatar ? (
                     <img src={otherUserAvatar} alt={otherUserName} className="w-full h-full object-cover" />
@@ -249,21 +278,32 @@ export function CallScreen({ call, isCaller, onClose, otherUserName = 'User', ot
              <p className="text-slate-400">
                  {callStatus === 'ringing' && isCaller ? 'Calling...' : ''}
                  {callStatus === 'ringing' && !isCaller ? 'Connecting...' : ''}
-                 {callStatus === 'connected' ? '0:00' : ''}
+                 {callStatus === 'connected' ? formatDuration(duration) : ''}
              </p>
           </div>
       )}
 
-      {/* Local Video PIP */}
-      {(call.type === 'video' && !isVideoOff) && (
-          <div className="absolute top-6 right-6 w-32 h-48 bg-slate-800 rounded-xl overflow-hidden shadow-2xl border-2 border-slate-700 z-10">
-              <video 
-                 ref={localVideoRef} 
-                 autoPlay 
-                 playsInline 
-                 muted 
-                 className="w-full h-full object-cover mirror" 
-              />
+      {/* Local Video PIP - Always mounted so stream is bound, opacity/scale handles visibility */}
+      <div 
+        className={`absolute top-6 right-6 w-32 h-48 bg-slate-800 rounded-xl overflow-hidden shadow-2xl border-2 border-slate-700 z-10 transition-all duration-300 ${
+          call.type === 'video' && !isVideoOff && callStatus === 'connected'
+            ? 'opacity-100 scale-100' 
+            : 'opacity-0 scale-95 pointer-events-none'
+        }`}
+      >
+          <video 
+             ref={localVideoRef} 
+             autoPlay 
+             playsInline 
+             muted 
+             className="w-full h-full object-cover -scale-x-100" 
+          />
+      </div>
+
+      {/* Floating Duration for active Video call */}
+      {call.type === 'video' && !isVideoOff && callStatus === 'connected' && (
+          <div className="absolute top-6 left-6 bg-black/40 backdrop-blur-md px-4 py-1.5 rounded-full z-10 font-mono text-sm">
+              {formatDuration(duration)}
           </div>
       )}
 
