@@ -358,19 +358,19 @@ export function DashboardView({
       </div>
 
       {/* Banner */}
-      <div className="bg-gradient-to-r from-[#21CD7A] to-[#1AB185] rounded-[1.5rem] p-5 mb-6 text-white relative overflow-hidden flex flex-col justify-center min-h-[110px] shadow-sm">
+      <div className="bg-gradient-to-br from-[#1E293B] via-[#0F172A] to-[#020617] border border-slate-200/10 dark:border-slate-800/80 rounded-[1.5rem] p-6 mb-6 text-white relative overflow-hidden flex flex-col justify-center min-h-[120px] shadow-[0_10px_30px_-5px_rgba(0,0,0,0.25)]">
         <div className="z-10 relative">
-          <p className="text-xs sm:text-sm font-bold mb-1.5 bg-white/20 inline-block px-3 py-1 rounded-full text-white backdrop-blur-sm">
+          <p className="text-[10px] sm:text-xs font-black uppercase tracking-wider mb-2 bg-emerald-500/10 text-emerald-400 inline-block px-3 py-1 rounded-full border border-emerald-500/20 backdrop-blur-sm">
             {t.balance}
           </p>
-          <h3 className="text-3xl sm:text-4xl font-black flex items-center tracking-tight">
+          <h3 className="text-3xl sm:text-4.5xl font-black flex items-center tracking-tight text-white">
             {formatBDT(currentBalance)}
           </h3>
         </div>
-        <div className="absolute -right-10 top-0 bottom-0 w-1/2 bg-[#17A074] skew-x-12 z-0"></div>
-        <div className="absolute right-[-20%] -top-10 w-40 h-40 bg-white/10 rounded-full blur-2xl z-0"></div>
-        <div className="absolute top-4 right-5 p-2 bg-white/20 rounded-xl backdrop-blur-sm z-10 text-white">
-          <Wallet size={28} />
+        <div className="absolute -right-10 top-0 bottom-0 w-1/2 bg-blue-500/5 skew-x-12 z-0"></div>
+        <div className="absolute right-[-10%] -top-10 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl z-0"></div>
+        <div className="absolute top-4 right-5 p-3 bg-white/5 dark:bg-slate-800/40 rounded-2xl border border-white/10 dark:border-slate-700/30 backdrop-blur-md z-10 text-emerald-400 dark:text-emerald-300 shadow-inner">
+          <Wallet size={24} />
         </div>
       </div>
 
@@ -401,11 +401,13 @@ export function DashboardView({
 
       {/* Large Cards Grid */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6">
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onChangeView("income")}
-          className="bg-[#1ACE65] text-white rounded-[1.5rem] p-4 sm:p-5 relative overflow-hidden text-left shadow-sm"
+          className="bg-gradient-to-br from-[#1ACE65] to-[#12A34C] text-white rounded-[1.5rem] p-4 sm:p-5 relative overflow-hidden text-left shadow-[0_8px_20px_-6px_rgba(26,206,101,0.3)] cursor-pointer"
         >
-          <div className="w-9 h-9 border border-white/30 rounded-[10px] flex items-center justify-center mb-4 bg-transparent mt-1">
+          <div className="w-9 h-9 border border-white/30 rounded-[10px] flex items-center justify-center mb-4 bg-white/10 mt-1">
             <svg
               width="20"
               height="20"
@@ -445,13 +447,15 @@ export function DashboardView({
           <p className="text-[10px] sm:text-xs font-semibold opacity-75 mt-1 sm:mt-1.5 uppercase">
             {t.allTransactions}
           </p>
-        </button>
+        </motion.button>
 
-        <button
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => onChangeView("expense")}
-          className="bg-[#E7484B] text-white rounded-[1.5rem] p-4 sm:p-5 relative overflow-hidden text-left shadow-sm"
+          className="bg-gradient-to-br from-[#E7484B] to-[#C93538] text-white rounded-[1.5rem] p-4 sm:p-5 relative overflow-hidden text-left shadow-[0_8px_20px_-6px_rgba(231,72,75,0.3)] cursor-pointer"
         >
-          <div className="w-9 h-9 border border-white/30 rounded-[10px] flex items-center justify-center mb-4 bg-transparent mt-1">
+          <div className="w-9 h-9 border border-white/30 rounded-[10px] flex items-center justify-center mb-4 bg-white/10 mt-1">
             <svg
               width="20"
               height="20"
@@ -492,7 +496,7 @@ export function DashboardView({
           <p className="text-[10px] sm:text-xs font-semibold opacity-75 mt-1 sm:mt-1.5 uppercase">
             {t.allTransactions}
           </p>
-        </button>
+        </motion.button>
       </div>
 
       {/* Grid Menu */}

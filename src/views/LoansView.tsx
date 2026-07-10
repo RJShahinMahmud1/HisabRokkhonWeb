@@ -166,71 +166,99 @@ export function LoansView() {
         <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-4">{t.currentLoans}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeLoans.length > 0 ? (
-            activeLoans.map(loan => (
-              <Card key={loan.id} className={loan.type === 'loan_given' ? 'border-l-4 border-l-sky-500' : 'border-l-4 border-l-rose-500'}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{loan.personName}</h4>
-                        <button onClick={() => deleteLoan(loan.id)} className="text-slate-400 hover:text-rose-500 transition-colors" title={t.deleteTitle}>
-                          <Trash2 className="w-4 h-4" />
+            activeLoans.map(loan => {
+              const repaidPercent = Math.min(((loan.repaidAmount || 0) / loan.amount) * 100, 100);
+              const remainingAmount = loan.amount - (loan.repaidAmount || 0);
+              const isGiven = loan.type === 'loan_given';
+
+              return (
+                <Card 
+                  key={loan.id} 
+                  className={`border border-slate-100 dark:border-slate-800/80 shadow-[0_2px_12px_rgba(0,0,0,0.01)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] border-l-4 ${isGiven ? 'border-l-sky-500 dark:border-l-sky-400' : 'border-l-rose-500 dark:border-l-rose-400'}`}
+                >
+                  <CardContent className="p-4 sm:p-5">
+                    <div className="flex justify-between items-start gap-3 mb-4">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="font-bold text-base text-slate-900 dark:text-white leading-tight">{loan.personName}</h4>
+                          <button 
+                            onClick={() => deleteLoan(loan.id)} 
+                            className="p-1 text-slate-400 hover:text-rose-500 rounded-md hover:bg-slate-50 dark:hover:bg-slate-900 transition" 
+                            title={t.deleteTitle}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <span className={`inline-block text-[10px] font-bold px-2 py-0.5 rounded-full mt-1.5 ${isGiven ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400' : 'bg-rose-500/10 text-rose-600 dark:text-rose-400'}`}>
+                          {isGiven ? t.iReceive : t.iPay}
+                        </span>
+                        {loan.note && <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-1.5 bg-slate-50 dark:bg-slate-900 px-2 py-1 rounded-md border border-slate-100 dark:border-slate-800/40 inline-block">{loan.note}</p>}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className={`font-black text-lg ${isGiven ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                          {formatBDT(loan.amount)}
+                        </p>
+                        {loan.dueDate && (
+                          <p className="text-[10px] font-bold text-slate-500 flex items-center justify-end mt-1 bg-slate-50 dark:bg-slate-900 px-2 py-0.5 rounded border border-slate-100 dark:border-slate-800/40">
+                            <Clock className="w-2.5 h-2.5 mr-1" />
+                            {new Date(loan.dueDate).toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'bn' ? 'bn-BD' : 'en-US', { month: 'short', day: 'numeric', year: '2-digit' })}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Progress Bar showing how much is repaid */}
+                    <div className="mt-3">
+                      <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-1.5 overflow-hidden border border-white/50 dark:border-slate-800/50">
+                        <div 
+                          className={`h-1.5 rounded-full transition-all duration-1000 ${isGiven ? 'bg-sky-500' : 'bg-rose-500'}`} 
+                          style={{ width: `${repaidPercent}%` }}
+                        ></div>
+                      </div>
+                    </div>
+
+                    <div className="mt-2.5 flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400">
+                      <div>
+                        {t.repaidLabel}
+                        <span className="font-black text-emerald-600 dark:text-emerald-400 ml-1">{formatBDT(loan.repaidAmount || 0)}</span>
+                      </div>
+                      <div>
+                        {t.dueLabel}
+                        <span className="font-black text-rose-500 ml-1">{formatBDT(remainingAmount)}</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-slate-800/80 pt-3">
+                      <div className="flex items-center gap-1.5">
+                        <input 
+                          type="number"
+                          min="0"
+                          placeholder={t.repayPlaceholder}
+                          value={repayInputs[loan.id] || ''}
+                          onChange={(e) => setRepayInputs({...repayInputs, [loan.id]: e.target.value})}
+                          className="w-20 sm:w-24 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-700 px-2.5 py-1.5 text-xs text-slate-800 focus:ring-2 focus:ring-emerald-500/50 outline-none dark:text-white font-bold shadow-sm"
+                        />
+                        <button 
+                          onClick={() => handlePartialRepay(loan.id)}
+                          disabled={!repayInputs[loan.id]}
+                          className="text-xs font-black text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 px-3 py-1.5 rounded-xl transition-all shadow-[0_2px_10px_rgba(16,185,129,0.1)]"
+                        >
+                          {t.repayBtn}
                         </button>
                       </div>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {loan.type === 'loan_given' ? t.iReceive : t.iPay}
-                      </p>
-                      {loan.note && <p className="text-sm text-slate-600 dark:text-slate-300 mt-1">{loan.note}</p>}
+                      <button 
+                        onClick={() => markCleared(loan.id)}
+                        className="shrink-0 flex items-center text-xs font-black text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50 px-3 py-1.5 rounded-xl transition-all border border-emerald-100 dark:border-emerald-900/30"
+                        title={t.repaidAllLabel}
+                      >
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                        <span>{t.clearedText}</span>
+                      </button>
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold text-base sm:text-lg ${loan.type === 'loan_given' ? 'text-sky-600 dark:text-sky-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {formatBDT(loan.amount)}
-                      </p>
-                      {loan.dueDate && (
-                        <p className="text-xs text-slate-500 flex items-center justify-end mt-1">
-                          <Clock className="w-3 h-3 mr-1" />
-                          {new Date(loan.dueDate).toLocaleDateString(lang === 'hi' ? 'hi-IN' : lang === 'bn' ? 'bn-BD' : 'en-US')}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  {loan.repaidAmount > 0 && (
-                    <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
-                      {t.repaidLabel}<span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatBDT(loan.repaidAmount)}</span>
-                      <br/>
-                      {t.dueLabel}<span className="font-semibold text-rose-600 dark:text-rose-400">{formatBDT(loan.amount - loan.repaidAmount)}</span>
-                    </div>
-                  )}
-                  <div className="mt-4 flex items-center justify-between gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
-                    <div className="flex w-full items-center space-x-2">
-                       <input 
-                         type="number"
-                         min="0"
-                         placeholder={t.repayPlaceholder}
-                         value={repayInputs[loan.id] || ''}
-                         onChange={(e) => setRepayInputs({...repayInputs, [loan.id]: e.target.value})}
-                         className="w-24 sm:w-28 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1.5 text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500/50 outline-none dark:text-white"
-                       />
-                       <button 
-                         onClick={() => handlePartialRepay(loan.id)}
-                         disabled={!repayInputs[loan.id]}
-                         className="text-xs font-bold text-white bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 px-3 py-2 rounded-lg transition-colors"
-                       >
-                         {t.repayBtn}
-                       </button>
-                    </div>
-                    <button 
-                      onClick={() => markCleared(loan.id)}
-                      className="shrink-0 flex items-center text-xs font-bold text-emerald-600 hover:text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/30 dark:hover:bg-emerald-900/50 px-3 py-2 rounded-lg transition-colors border border-emerald-100 dark:border-emerald-800/30"
-                      title={t.repaidAllLabel}
-                    >
-                      <CheckCircle className="w-4 h-4 mr-1 sm:mr-1.5" />
-                      <span className="hidden sm:inline">{t.clearedText}</span>
-                    </button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+                  </CardContent>
+                </Card>
+              );
+            })
           ) : (
             <p className="col-span-full text-center text-slate-500 dark:text-slate-400 py-4">{t.noLoans}</p>
           )}

@@ -209,27 +209,30 @@ export function SavingsView() {
           }
 
           return (
-            <Card key={goal.id}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="bg-blue-100 dark:bg-blue-900/40 p-3 rounded-2xl text-blue-600 dark:text-blue-400 mt-1 shrink-0">
-                      <Target className="w-6 h-6" />
+            <Card 
+              key={goal.id}
+              className="border border-slate-100 dark:border-slate-800/80 shadow-[0_2px_12px_rgba(0,0,0,0.01)] transition-all duration-300 hover:shadow-[0_8px_24px_rgba(0,0,0,0.05)] border-l-4 border-l-blue-500 dark:border-l-blue-400 overflow-hidden relative"
+            >
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-5">
+                  <div className="flex items-start gap-3">
+                    <div className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 dark:from-blue-500/20 dark:to-indigo-500/20 border border-blue-500/20 dark:border-blue-500/30 p-2.5 rounded-xl text-blue-600 dark:text-blue-400 shrink-0 shadow-sm">
+                      <Target className="w-5 h-5" />
                     </div>
                     <div>
-                      <h4 className="font-bold text-base sm:text-lg text-slate-900 dark:text-white">{goal.name}</h4>
+                      <h4 className="font-bold text-base text-slate-900 dark:text-white leading-tight">{goal.name}</h4>
                       {goal.deadline ? (
-                        <p className="text-xs text-slate-500 dark:text-slate-400 tracking-wide mt-0.5">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold tracking-wide mt-1">
                           {lang === 'hi' ? `समय सीमा: ${new Date(goal.deadline).toLocaleDateString('hi-IN', { year: 'numeric', month: 'long', day: 'numeric'})}` : lang === 'bn' ? `সময়সীমা: ${new Date(goal.deadline).toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric'})}` : `Deadline: ${new Date(goal.deadline).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric'})}`}
                         </p>
                       ) : (
-                        <p className="text-xs text-slate-400 dark:text-slate-500">{t.noDeadline}</p>
+                        <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 mt-1">{t.noDeadline}</p>
                       )}
                     </div>
                   </div>
                   
-                  <div className="flex flex-col items-end gap-2 w-full sm:w-auto">
-                    <div className="flex gap-2">
+                  <div className="flex flex-col sm:items-end gap-2 w-full sm:w-auto">
+                    <div className="flex gap-1.5 self-end sm:self-auto">
                       <button 
                         onClick={() => {
                           setEditingGoalId(goal.id);
@@ -238,9 +241,9 @@ export function SavingsView() {
                           setEditSavedAmount(String(goal.savedAmount));
                           setEditDeadline(goal.deadline || '');
                         }} 
-                        className="px-2.5 py-1 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-lg hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition"
+                        className="px-2.5 py-1 text-[11px] font-bold bg-slate-50 hover:bg-slate-100 dark:bg-slate-900 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition"
                       >
-                        <Edit2 className="w-3.5 h-3.5" /> {t.edit}
+                        <Edit2 className="w-3 h-3" /> {t.edit}
                       </button>
                       {deleteConfirmId === goal.id ? (
                         <div className="flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/30 p-1 rounded-lg">
@@ -264,25 +267,32 @@ export function SavingsView() {
                       ) : (
                         <button 
                           onClick={() => setDeleteConfirmId(goal.id)} 
-                          className="px-2.5 py-1 text-xs bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-1 transition"
+                          className="px-2.5 py-1 text-[11px] font-bold bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-rose-600 dark:text-rose-400 rounded-lg flex items-center gap-1 transition"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> {t.deleteLabel}
+                          <Trash2 className="w-3 h-3" /> {t.deleteLabel}
                         </button>
                       )}
                     </div>
-                    <div className="text-right mt-1">
-                      <p className="font-bold text-xl text-slate-900 dark:text-white">{formatBDT(goal.savedAmount)}</p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">{t.goalLabel} {formatBDT(goal.targetAmount)}</p>
+                    <div className="text-right mt-1 hidden sm:block">
+                      <p className="font-black text-xl text-slate-900 dark:text-white">{formatBDT(goal.savedAmount)}</p>
+                      <p className="text-xs font-bold text-slate-400 dark:text-slate-500">{t.goalLabel} {formatBDT(goal.targetAmount)}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="w-full bg-slate-100 dark:bg-slate-700/50 rounded-full h-3 mb-4 overflow-hidden border border-white/50 dark:border-slate-600/50">
-                  <div className="bg-blue-500 h-3 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                <div className="sm:hidden flex justify-between items-end mb-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500">{t.goalLabel} {formatBDT(goal.targetAmount)}</p>
+                    <p className="font-black text-lg text-slate-900 dark:text-white">{formatBDT(goal.savedAmount)}</p>
+                  </div>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">{progress.toFixed(1)}% {t.completedText}</span>
+                <div className="w-full bg-slate-100 dark:bg-slate-900 rounded-full h-2.5 mb-4 overflow-hidden border border-white/50 dark:border-slate-800/50">
+                  <div className="bg-gradient-to-r from-blue-500 to-indigo-500 h-2.5 rounded-full transition-all duration-1000" style={{ width: `${progress}%` }}></div>
+                </div>
+
+                <div className="flex justify-between items-center flex-wrap gap-3">
+                  <span className="text-[11px] sm:text-xs font-black text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 rounded-full">{progress.toFixed(1)}% {t.completedText}</span>
                   
                   {activeGoalId === goal.id ? (
                     <form onSubmit={(e) => handleDeposit(e, goal.id)} className="flex items-center space-x-2">
@@ -290,17 +300,17 @@ export function SavingsView() {
                         type="number" required min="1"
                         placeholder={t.depositLabel}
                         value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)}
-                        className="w-28 px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900"
+                        className="w-24 sm:w-28 px-3 py-1.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500/50 text-slate-900 shadow-sm"
                       />
-                      <button type="submit" className="text-sm font-bold px-3 sm:px-4 py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-md transition">{t.saveBtn}</button>
-                      <button type="button" onClick={() => setActiveGoalId(null)} className="text-sm font-bold px-3 sm:px-4 py-2 bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 rounded-xl transition">{t.cancel}</button>
+                      <button type="submit" className="text-xs font-black px-3 py-1.5 sm:py-2 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 shadow-md transition">{t.saveBtn}</button>
+                      <button type="button" onClick={() => setActiveGoalId(null)} className="text-xs font-bold px-2.5 py-1.5 sm:py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition">{t.cancel}</button>
                     </form>
                   ) : (
                     <button 
                       onClick={() => setActiveGoalId(goal.id)}
-                      className="text-sm flex items-center bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 sm:px-4 py-2 rounded-xl transition"
+                      className="text-xs sm:text-sm flex items-center bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 font-bold hover:bg-blue-100 dark:hover:bg-blue-900/50 px-3 py-1.5 rounded-xl transition shadow-[0_2px_10px_rgba(59,130,246,0.02)]"
                     >
-                      <TrendingUp className="w-4 h-4 mr-2" /> {t.depositBtnText}
+                      <TrendingUp className="w-3.5 h-3.5 mr-1.5" /> {t.depositBtnText}
                     </button>
                   )}
                 </div>
