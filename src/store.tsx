@@ -5,12 +5,6 @@ import { auth, db, handleFirestoreError, OperationType, updateUserProfile } from
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
 
-// Add new admin emails here to grant them admin access
-const ADMIN_EMAILS = [
-  'technicalshahin04@gmail.com',
-  // 'admin@gmail.com'
-];
-
 export interface State {
   user: User | null;
   categories: Category[];
@@ -165,7 +159,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
              profileSetupCompleted: remoteState.user?.profileSetupCompleted ?? currentSetupStatus ?? false,
              followers: remoteState.user?.followers || 0,
              following: remoteState.user?.following || 0,
-             role: ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? 'admin' : (remoteState.user?.role || 'user'),
+             role: remoteState.user?.role || 'user',
              banned: remoteState.user?.banned || false,
              messagesDisabled: remoteState.user?.messagesDisabled || false,
              updatedAt: serverTimestamp()
@@ -182,7 +176,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                   avatarUrl: nextAvatar,
                   profileSetupCompleted: remoteState.user?.profileSetupCompleted ?? currentSetupStatus,
                   username: currentUsername || remoteState.user?.username,
-                  role: ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? 'admin' : (remoteState.user?.role || 'user'),
+                  role: remoteState.user?.role || 'user',
                   banned: remoteState.user?.banned || false,
                   messagesDisabled: remoteState.user?.messagesDisabled || false
               } : s.user 
@@ -207,7 +201,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }, { merge: true }).catch(console.error);
       
       setState(s => {
-         const adminRole = ADMIN_EMAILS.includes(auth.currentUser?.email || '') ? 'admin' : 'user';
+         const adminRole = 'user';
          const ns = { ...s, user: s.user ? { ...s.user, username: currentUsername, profileSetupCompleted: currentSetupStatus, role: adminRole } : s.user };
          isInitialLoad.current = false;
          return ns;

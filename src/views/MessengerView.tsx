@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAppStore } from '../store';
-import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, MicOff, Play, Pause, Square, Video, Phone } from 'lucide-react';
+import { Search, Send, User as UserIcon, ArrowLeft, Check, CheckCheck, MessageCircle, MoreVertical, MoreHorizontal, Edit3, Trash2, Smile, X, MessageSquareOff, CornerUpLeft, Image as ImageIcon, Mic, MicOff, Play, Pause, Square } from 'lucide-react';
 import { 
   subscribeToConversations, 
   subscribeToMessages, 
@@ -21,8 +21,6 @@ import {
 } from '../lib/chatService';
 import { db } from '../lib/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { CallData, subscribeToIncomingCalls, startCall, updateCallStatus, subscribeToCall } from '../lib/callService';
-import { CallScreen } from '../components/CallScreen';
 
 function VoiceMessagePlayer({ src, duration: initialDuration, isMe }: { src: string, duration?: number, isMe: boolean }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -174,134 +172,7 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
   const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
   const recordingDurationRef = useRef<number>(0);
 
-  // Calling states
-  const [incomingCall, setIncomingCall] = useState<CallData | null>(null);
-  const [activeCall, setActiveCall] = useState<{ call: CallData, isCaller: boolean } | null>(null);
-  const [currentCallStatus, setCurrentCallStatus] = useState<CallData['status'] | null>(null);
-  const [recentCallMessage, setRecentCallMessage] = useState<{ text: string, type: 'info' | 'success' | 'error' | 'warning' } | null>(null);
-  const [isCallMuted, setIsCallMuted] = useState(false);
-
-  // Reset mute state when activeCall ends
-  useEffect(() => {
-    if (!activeCall) {
-      setIsCallMuted(false);
-    }
-  }, [activeCall]);
-
-  // Subscribe to incoming calls
-  useEffect(() => {
-    if (!user) return;
-    const unsub = subscribeToIncomingCalls(user.id, (call) => {
-       if (call.status === 'ringing') {
-          setIncomingCall(call);
-       } else if (call.status === 'ended' || call.status === 'missed' || call.status === 'rejected') {
-          setIncomingCall(null);
-       }
-    });
-    return () => unsub();
-  }, [user]);
-
-  // Subscribe to active call status for real-time visual indicator in MessengerView
-  useEffect(() => {
-    if (!activeCall?.call?.id) {
-      setCurrentCallStatus(null);
-      return;
-    }
-    
-    setCurrentCallStatus(activeCall.call.status);
-    
-    // Set initial calling message
-    setRecentCallMessage({
-      text: lang === 'bn' 
-        ? `${activeCall.call.type === 'video' ? 'ভিডিও' : 'অডিও'} কল শুরু হচ্ছে...` 
-        : `Starting ${activeCall.call.type === 'video' ? 'Video' : 'Audio'} Call...`,
-      type: 'info'
-    });
-
-    const unsub = subscribeToCall(activeCall.call.id, (updatedCall) => {
-      setCurrentCallStatus(updatedCall.status);
-      
-      const isVideo = updatedCall.type === 'video';
-      const callTypeLabel = lang === 'bn' ? (isVideo ? 'ভিডিও' : 'অডিও') : (isVideo ? 'Video' : 'Audio');
-
-      if (updatedCall.status === 'ringing') {
-        setRecentCallMessage({
-          text: lang === 'bn' 
-            ? `${callTypeLabel} কল বাজছে...` 
-            : `${callTypeLabel} Call: Ringing...`,
-          type: 'info'
-        });
-      } else if (updatedCall.status === 'connected') {
-        setRecentCallMessage({
-          text: lang === 'bn' 
-            ? `${callTypeLabel} কল সংযুক্ত হয়েছে` 
-            : `${callTypeLabel} Call: Connected`,
-          type: 'success'
-        });
-      } else if (updatedCall.status === 'ended') {
-        setRecentCallMessage({
-          text: lang === 'bn' 
-            ? `${callTypeLabel} কল শেষ হয়েছে` 
-            : `${callTypeLabel} Call: Ended`,
-          type: 'warning'
-        });
-        setTimeout(() => setRecentCallMessage(null), 4000);
-      } else if (updatedCall.status === 'rejected') {
-        setRecentCallMessage({
-          text: lang === 'bn' 
-            ? `${callTypeLabel} কল প্রত্যাখ্যান করা হয়েছে` 
-            : `${callTypeLabel} Call: Rejected`,
-          type: 'error'
-        });
-        setTimeout(() => setRecentCallMessage(null), 4000);
-      } else if (updatedCall.status === 'missed') {
-        setRecentCallMessage({
-          text: lang === 'bn' 
-            ? `${callTypeLabel} মিসড কল` 
-            : `Missed ${callTypeLabel} Call`,
-          type: 'error'
-        });
-        setTimeout(() => setRecentCallMessage(null), 4000);
-      }
-    });
-
-    return () => unsub();
-  }, [activeCall, lang]);
-
-  const handleStartCall = async (type: 'audio' | 'video') => {
-      if (!user || !activeConvId || !otherUserId) return;
-      try {
-         const callId = await startCall(activeConvId, user.id, otherUserId, type);
-         setActiveCall({
-             call: { id: callId, conversationId: activeConvId, callerId: user.id, calleeId: otherUserId, type, status: 'ringing', createdAt: new Date() },
-             isCaller: true
-         });
-      } catch(e) {
-         console.error('Call failed', e);
-         setRecentCallMessage({
-            text: lang === 'bn' ? 'কল করতে সমস্যা হয়েছে!' : 'Failed to start call!',
-            type: 'error'
-         });
-         setTimeout(() => setRecentCallMessage(null), 4000);
-      }
-  };
-
-  const handleAcceptCall = async () => {
-      if (!incomingCall || !incomingCall.id) return;
-      setActiveCall({ call: incomingCall, isCaller: false });
-      setIncomingCall(null);
-  };
-
-  const handleRejectCall = async () => {
-      if (!incomingCall || !incomingCall.id) return;
-      await updateCallStatus(incomingCall.id, 'rejected');
-      setIncomingCall(null);
-      setRecentCallMessage({
-         text: lang === 'bn' ? 'কল প্রত্যাখ্যান করা হয়েছে' : 'Call Rejected',
-         type: 'error'
-      });
-      setTimeout(() => setRecentCallMessage(null), 4000);
-  };
+  // Calling system removed
 
 
   if (user?.messagesDisabled) {
@@ -847,12 +718,6 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                         </div>
                     </div>
                     <div className="relative flex items-center gap-1">
-                        <button onClick={() => handleStartCall('audio')} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-blue-500">
-                           <Phone className="w-5 h-5" />
-                        </button>
-                        <button onClick={() => handleStartCall('video')} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-blue-500">
-                           <Video className="w-5 h-5" />
-                        </button>
                         <button onClick={() => setShowConvOptions(!showConvOptions)} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition text-slate-500">
                            <MoreVertical className="w-5 h-5" />
                         </button>
@@ -866,56 +731,6 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
                         )}
                     </div>
                 </div>
-
-                {/* Call Status Banner */}
-                {recentCallMessage && (
-                   <div className={`px-4 lg:px-6 py-2.5 flex items-center justify-between text-xs lg:text-sm font-semibold transition-all animate-in slide-in-from-top-2 duration-300 ${
-                       recentCallMessage.type === 'success' 
-                         ? 'bg-emerald-50 text-emerald-800 border-b border-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-900/50' 
-                         : recentCallMessage.type === 'error'
-                         ? 'bg-rose-50 text-rose-800 border-b border-rose-100 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-900/50'
-                         : recentCallMessage.type === 'warning'
-                         ? 'bg-amber-50 text-amber-800 border-b border-amber-100 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/50'
-                         : 'bg-blue-50 text-blue-800 border-b border-blue-100 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-900/50'
-                   }`}>
-                      <div className="flex items-center gap-2">
-                         <span className="relative flex h-2 w-2">
-                            {(recentCallMessage.type === 'info' || recentCallMessage.type === 'success') && (
-                               <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                                  recentCallMessage.type === 'success' ? 'bg-emerald-400' : 'bg-blue-400'
-                               }`}></span>
-                            )}
-                            <span className={`relative inline-flex rounded-full h-2 w-2 ${
-                               recentCallMessage.type === 'success' ? 'bg-emerald-500' :
-                               recentCallMessage.type === 'error' ? 'bg-rose-500' :
-                               recentCallMessage.type === 'warning' ? 'bg-amber-500' : 'bg-blue-500'
-                            }`}></span>
-                         </span>
-                         <span>{recentCallMessage.text}</span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                         {activeCall && (currentCallStatus === 'connected' || currentCallStatus === 'ringing') && (
-                            <button
-                               onClick={() => setIsCallMuted(!isCallMuted)}
-                               className={`p-1.5 rounded-full transition flex items-center justify-center ${
-                                  isCallMuted
-                                    ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:hover:bg-rose-900/50 shadow-sm'
-                                    : 'bg-white/40 hover:bg-white/60 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 text-slate-700 hover:text-slate-900 shadow-sm'
-                               }`}
-                               title={isCallMuted ? (lang === 'bn' ? 'মাইক্রোফোন চালু করুন' : 'Unmute microphone') : (lang === 'bn' ? 'মাইক্রোফোন বন্ধ করুন' : 'Mute microphone')}
-                            >
-                               {isCallMuted ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-                            </button>
-                         )}
-                         <button 
-                            onClick={() => setRecentCallMessage(null)} 
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
-                         >
-                            <X className="w-4 h-4" />
-                         </button>
-                      </div>
-                   </div>
-                )}
 
                 {/* Messages Area */}
                 <div 
@@ -1232,53 +1047,6 @@ export function MessengerView({ onBack, onViewProfile }: { onBack: () => void, o
         </div>
       )}
 
-      {/* Incoming Call Dialog */}
-      {incomingCall && !activeCall && (
-         <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-             <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl text-center relative animate-in zoom-in-95 duration-200">
-                 <div className="w-20 h-20 mx-auto rounded-full bg-slate-200 dark:bg-slate-800 mb-4 overflow-hidden shadow-inner">
-                     {profiles[incomingCall.callerId]?.avatarUrl ? (
-                         <img src={profiles[incomingCall.callerId].avatarUrl} alt="Caller" className="w-full h-full object-cover" />
-                     ) : (
-                         <span className="text-2xl font-bold text-slate-500 flex items-center justify-center h-full">{profiles[incomingCall.callerId]?.name?.[0] || '?'}</span>
-                     )}
-                 </div>
-                 <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
-                     {profiles[incomingCall.callerId]?.name || 'Unknown User'}
-                 </h3>
-                 <p className="text-slate-500 mb-8 font-medium">
-                     Incoming {incomingCall.type === 'video' ? 'Video' : 'Voice'} Call...
-                 </p>
-                 <div className="flex items-center justify-center gap-6">
-                     <button 
-                         onClick={handleRejectCall}
-                         className="w-16 h-16 rounded-full bg-rose-600 text-white flex items-center justify-center hover:bg-rose-700 transition shadow-lg shadow-rose-900/50 hover:scale-105 active:scale-95"
-                     >
-                         <Phone className="w-7 h-7 rotate-[135deg]" />
-                     </button>
-                     <button 
-                         onClick={handleAcceptCall}
-                         className="w-16 h-16 rounded-full bg-green-500 text-white flex items-center justify-center hover:bg-green-600 transition shadow-lg shadow-green-900/50 hover:scale-105 active:scale-95 animate-pulse"
-                     >
-                         {incomingCall.type === 'video' ? <Video className="w-7 h-7" /> : <Phone className="w-7 h-7" />}
-                     </button>
-                 </div>
-             </div>
-         </div>
-      )}
-
-      {/* Active Call Screen */}
-      {activeCall && (
-          <CallScreen 
-             call={activeCall.call} 
-             isCaller={activeCall.isCaller} 
-             onClose={() => setActiveCall(null)} 
-             otherUserName={activeCall.isCaller ? profiles[activeCall.call.calleeId]?.name : profiles[activeCall.call.callerId]?.name}
-             otherUserAvatar={activeCall.isCaller ? profiles[activeCall.call.calleeId]?.avatarUrl : profiles[activeCall.call.callerId]?.avatarUrl}
-             isMuted={isCallMuted}
-             onMuteToggle={setIsCallMuted}
-          />
-      )}
     </div>
   );
 }

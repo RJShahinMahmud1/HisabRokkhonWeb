@@ -17,7 +17,6 @@ import {
   Moon,
   Globe,
   MessageCircle,
-  Shield,
   UserCircle,
   Users
 } from "lucide-react";
@@ -200,11 +199,6 @@ export function DashboardView({
       view: "savings",
     },
     {
-      icon: <Users strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
-      label: "SM Social",
-      view: "profile",
-    },
-    {
       icon: <UserCircle strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
       label: "Profile",
       view: "my_profile",
@@ -223,12 +217,7 @@ export function DashboardView({
       icon: <Settings strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
       label: t.settings,
       view: "settings",
-    },
-    ...(user?.role === 'admin' ? [{
-      icon: <Shield strokeWidth={1.5} size={26} className="text-[#32C58F]" />,
-      label: "Admin Panel",
-      view: "admin",
-    }] : [])
+    }
   ];
 
   return (

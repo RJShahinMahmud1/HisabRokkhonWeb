@@ -5,7 +5,6 @@ import { AuthView } from './views/AuthView';
 import { DashboardView } from './views/DashboardView';
 import { TransactionView } from './views/TransactionView';
 import { ProfileView } from './views/ProfileView';
-import { SMSocialView } from './views/social/SMSocialView';
 import { SettingsView } from './views/SettingsView';
 import { ReportsView } from './views/ReportsView';
 import { HistoryView } from './views/HistoryView';
@@ -13,7 +12,6 @@ import { LoansView } from './views/LoansView';
 import { SavingsView } from './views/SavingsView';
 import { BudgetView } from './views/BudgetView';
 import { MessengerView } from './views/MessengerView';
-import { AdminView } from './views/AdminView';
 import { ViewState } from './types';
 
 function AppContent() {
@@ -64,9 +62,8 @@ function AppContent() {
       case 'reports': return <ReportsView />;
       case 'history': return <HistoryView />;
       case 'settings': return <SettingsView />;
-      case 'admin': return <AdminView />;
-      case 'profile': return <SMSocialView initialProfileId={viewingProfileId} onViewProfile={handleViewProfile} />;
-      case 'my_profile': return <ProfileView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
+      case 'profile': return <ProfileView profileId={viewingProfileId} onBack={() => setCurrentView('dashboard')} />;
+      case 'my_profile': return <ProfileView onBack={() => setCurrentView('dashboard')} />;
       case 'messages': return <MessengerView onBack={() => setCurrentView('dashboard')} onViewProfile={handleViewProfile} />;
       default: return <DashboardView onChangeView={setCurrentView} onViewProfile={handleViewProfile} />;
     }

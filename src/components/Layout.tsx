@@ -56,10 +56,6 @@ export function Layout({ children, currentView, onViewChange, onViewProfile }: L
     { id: 'settings', label: t.settings, icon: <Settings size={18} /> },
   ];
 
-  if (user?.role === 'admin') {
-      menuItems.push({ id: 'admin', label: 'Admin Panel', icon: <Shield size={18} /> });
-  }
-
   // Fetch unread count globally
   const [totalUnread, setTotalUnread] = React.useState(0);
   React.useEffect(() => {
